@@ -1,14 +1,14 @@
 /* Service worker de Beeziday — met en cache la coquille de l'app pour un usage hors-ligne.
    IMPORTANT : change CACHE_NAME (ex: "beeziday-v2") à chaque fois que tu modifies index.html
    de façon significative, sinon les téléphones continueront d'utiliser l'ancienne version en cache. */
-const CACHE_NAME = "beeziday-v1";
+const CACHE_NAME = "beeziday-v2";
 const ASSETS = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./icons/icon-192.png",
-  "./icons/icon-512.png",
-  "./icons/apple-touch-icon.png"
+  "./icon-192.png",
+  "./icon-512.png",
+  "./apple-touch-icon.png"
 ];
 
 self.addEventListener("install", (event) => {
