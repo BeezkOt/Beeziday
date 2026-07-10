@@ -1,0 +1,2818 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Beeziday</title>
+<meta name="description" content="Gestion de projets, tâches, plages horaires et habitudes">
+<meta name="theme-color" content="#EFF1EA" id="themeColorMeta">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Beeziday">
+<style>
+  :root{
+    --bg: #EFF1EA;
+    --surface: #F8F9F4;
+    --surface-raised: #FFFFFF;
+    --border: #DCDFD2;
+    --text: #23291F;
+    --text-muted: #6B7263;
+    --accent: #2F6F63;
+    --accent-soft: #DCEAE5;
+    --gold: #D9A441;
+    --gold-soft: #F5E7C8;
+    --alert: #C1543C;
+    --alert-soft: #F5DCD5;
+    --radius-lg: 20px;
+    --radius-md: 14px;
+    --radius-sm: 10px;
+    --nav-h: 64px;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+
+  body.theme-dark{
+    --bg:#1C211A; --surface:#242A21; --surface-raised:#2B3227; --border:#3A4235;
+    --text:#EDEFE7; --text-muted:#9AA292; --accent:#4F9C87; --accent-soft:#28362F;
+    --gold:#E0B255; --gold-soft:#2E362B; --alert:#E4876C; --alert-soft:#3A2620;
+  }
+  body.theme-cream{
+    --bg:#F6EFE1; --surface:#FBF6EA; --surface-raised:#FFFDF7; --border:#E6DCC6;
+    --text:#2B2418; --text-muted:#8A7F68; --accent:#7C8B52; --accent-soft:#E7E9D3;
+    --gold:#D9A441; --gold-soft:#E9D6B0; --alert:#C1543C; --alert-soft:#F5DCD5;
+    --heading:#6B4A2B;
+  }
+
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    overscroll-behavior-y: none;
+  }
+  h1,h2,h3,p{margin:0;}
+  h1,h2,h3{color:var(--heading, var(--text));}
+
+  #app{
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+    padding-bottom: calc(var(--nav-h) + 24px);
+    background: var(--bg);
+  }
+
+  /* ---------- Screen stack (push navigation) ---------- */
+  .screen{
+    position:absolute;
+    top:0; left:0; right:0;
+    min-height: 100%;
+    background: var(--bg);
+    padding: 20px 18px calc(var(--nav-h) + 24px);
+    transition: transform .3s cubic-bezier(.32,.72,.35,1);
+    will-change: transform;
+  }
+
+  .screen-header{
+    display:flex; align-items:center; gap:10px;
+    margin-bottom: 18px;
+    min-height: 34px;
+  }
+  .back-btn{
+    width:34px; height:34px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    background: var(--surface-raised); border:1px solid var(--border); color: var(--text);
+    flex-shrink:0; cursor:pointer;
+  }
+  .back-btn svg{width:16px; height:16px;}
+  .screen-title{font-size:20px; font-weight:700; flex:1;}
+  .row-title{
+    display:flex; align-items:center; justify-content:space-between;
+    margin: 22px 0 12px;
+  }
+  .row-title h2{font-size:15px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color: var(--text-muted);}
+  .icon-btn{
+    width:30px; height:30px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    background: var(--accent-soft); color: var(--accent);
+    border:none; cursor:pointer;
+  }
+  .icon-btn svg{width:16px;height:16px;}
+
+  /* ---------- Dashboard ---------- */
+  .greeting{font-size:24px; font-weight:800; margin-bottom:18px; color:var(--heading, var(--text));}
+
+  .slot-row{
+    display:flex; align-items:center; justify-content:space-between;
+    background: var(--surface); border:1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 10px 14px;
+    margin-bottom:16px;
+  }
+  .slot-row .slot-time{font-size:13px; color:var(--text-muted); font-weight:600;}
+  .slot-select{
+    border:none; background:transparent; font-weight:700; font-size:14px;
+    color:var(--accent); text-align:right; max-width:150px;
+  }
+
+  .empty-slot-box{
+    background: var(--accent-soft); border-radius: var(--radius-lg);
+    padding: 22px 18px; text-align:center; margin-bottom: 16px;
+  }
+  .empty-slot-box p{font-weight:700; margin-bottom:12px; color:var(--heading, var(--text));}
+  .empty-slot-icon{color:var(--accent); margin-bottom:10px;}
+  .empty-slot-icon svg{width:34px; height:34px;}
+  .btn-choose{
+    background: var(--accent); color:#fff; border:none;
+    padding:10px 18px; border-radius: 999px; font-weight:700; font-size:13px; cursor:pointer;
+  }
+
+  .project-card{
+    background: var(--surface-raised); border:1px solid var(--border);
+    border-radius: var(--radius-lg); padding:16px; margin-bottom: 8px;
+  }
+  .project-card .top-row{display:flex; justify-content:space-between; align-items:baseline; gap:10px;}
+  .project-card .p-title{font-weight:700; font-size:16px;}
+  .project-card .p-label{font-weight:500; color:var(--text-muted); font-size:13px;}
+  .project-card .p-deadline{font-size:12px; color:var(--text-muted); white-space:nowrap;}
+  .progress-row{display:flex; align-items:center; gap:10px; margin-top:12px;}
+  .progress-track{
+    flex:1; height:8px; background:var(--border); border-radius:999px; overflow:hidden;
+  }
+  .progress-fill{height:100%; background:var(--accent); border-radius:999px;}
+  .progress-pct{font-size:12px; font-weight:700; color:var(--text-muted); white-space:nowrap;}
+
+  .alert-banner{
+    display:flex; align-items:center; gap:8px;
+    background: var(--alert-soft); color:#7A3626;
+    border-radius: var(--radius-sm); padding:10px 12px; font-size:12.5px; font-weight:600;
+    margin-bottom:10px;
+  }
+  .alert-banner svg{width:16px;height:16px; flex-shrink:0;}
+  .alert-banner .alert-text{flex:1;}
+  .alert-banner .alert-text strong{font-weight:700;}
+  .alert-switch{
+    background: rgba(255,255,255,.6); border:none; border-radius:50%;
+    width:26px; height:26px; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    color:#7A3626; cursor:pointer;
+  }
+  .alert-switch svg{width:14px;height:14px;}
+  .alert-banner-wrap{margin-bottom:6px;}
+
+  .task-card{
+    display:flex; align-items:center; gap:12px;
+    background: var(--surface-raised); border:1px solid var(--border);
+    border-radius: var(--radius-lg); padding:14px 16px;
+  }
+  .task-card.next{
+    background: var(--surface); opacity:.55; filter:grayscale(1); pointer-events:none;
+  }
+  .check-circle{
+    width:26px; height:26px; border-radius:50%; border:2px solid var(--accent);
+    flex-shrink:0; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  }
+  .check-circle.done{ background:var(--accent); }
+  .check-circle svg{width:14px;height:14px; stroke:#fff; display:none;}
+  .check-circle.done svg{display:block;}
+  .task-name{flex:1; font-weight:600; font-size:15px;}
+  .star{width:20px;height:20px; flex-shrink:0; color: var(--gold);}
+  .star.off{display:none;}
+
+  .link-more{
+    display:block; text-align:center; margin-top:16px; padding:10px;
+    color:var(--accent); font-weight:700; font-size:13.5px; text-decoration:none; cursor:pointer;
+  }
+  .btn-skip-next{
+    display:block; width:max-content; margin:14px auto 0;
+    padding:9px 20px; border-radius:999px; border:1.5px solid var(--accent);
+    background:var(--bg); color:var(--accent); font-weight:700; font-size:13px; cursor:pointer;
+  }
+
+  .finished-box{
+    background: var(--gold-soft); border-radius: var(--radius-lg);
+    padding:20px; text-align:center;
+  }
+  .finished-box p.big{font-weight:800; font-size:16px; margin-bottom:4px;}
+  .finished-box p.small{font-size:13px; color:var(--text-muted); margin-bottom:14px;}
+
+  .slot-only-card{
+    border-radius: var(--radius-lg); padding:26px 18px; text-align:center; color:#fff;
+  }
+  .slot-only-card p.big{font-weight:800; font-size:18px; margin-bottom:6px;}
+  .slot-only-card p.small{font-size:13.5px; opacity:.9;}
+
+  /* ---------- Catégories ---------- */
+  .cat-row{
+    display:flex; align-items:center; gap:12px;
+    width:100%; border-radius: var(--radius-md); padding:16px;
+    color:#fff; font-weight:700; font-size:15px; margin-bottom:10px;
+    cursor:grab; user-select:none; position:relative; touch-action:none;
+    transition: transform .18s ease;
+  }
+  .cat-row.dragging{ transition:none; cursor:grabbing; opacity:.5; }
+  .cat-row .cat-name{flex:1;}
+  .cat-row .chev{width:16px;height:16px; opacity:.85;}
+
+  /* ---------- Project/task list ---------- */
+  .item-row{
+    background: var(--surface-raised); border:1px solid var(--border);
+    border-radius: var(--radius-lg); padding:14px 16px; margin-bottom:10px;
+    cursor:grab; user-select:none; touch-action:none;
+    transition: transform .18s ease;
+  }
+  .item-row.dragging{ opacity:.5; transition:none; cursor:grabbing; }
+  .item-row .top-row{display:flex; justify-content:space-between; align-items:center; gap:8px;}
+  .item-row .p-title{font-weight:700; font-size:15px;}
+  .item-row .meta{display:flex; align-items:center; gap:10px; margin-top:8px; font-size:12px; color:var(--text-muted);}
+  .item-row .meta .deadline.soon{color:var(--alert); font-weight:700;}
+  .item-row.task-row{display:flex; align-items:center; gap:12px;}
+  .item-row.task-row .task-name{flex:1;}
+  .repeat-icon{width:15px;height:15px; color:var(--text-muted); flex-shrink:0;}
+  .priority-icon{flex-shrink:0;}
+  .priority-icon.priority-elevee{color: var(--alert);}
+  .priority-icon.priority-moyenne{color: var(--gold);}
+  .priority-icon.priority-faible{color: var(--text-muted);}
+
+  /* ---------- Quick add bar (magnetized) ---------- */
+  .quick-add{
+    position: fixed; left:0; right:0; bottom: calc(var(--nav-h) + 10px);
+    display:flex; justify-content:center; z-index:20; pointer-events:none;
+  }
+  .quick-add-inner{
+    pointer-events:auto;
+    width: calc(100% - 36px); max-width: 444px;
+    background: var(--surface-raised); border:1px solid var(--border);
+    border-radius: 999px; padding: 6px 6px 6px 18px;
+    display:flex; align-items:center; gap:8px;
+    box-shadow: 0 6px 20px rgba(35,41,31,.12);
+  }
+  .quick-add-inner input{
+    flex:1; border:none; outline:none; background:transparent;
+    font-size:16px; color:var(--text); font-family: var(--font);
+  }
+  .quick-add-inner input::placeholder{color:var(--text-muted);}
+  .quick-add-send{
+    width:36px; height:36px; border-radius:50%; border:none;
+    background: var(--accent); color:#fff; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .quick-add-send svg{width:16px;height:16px;}
+
+  /* ---------- Bottom nav ---------- */
+  nav.bottom-nav{
+    position: fixed; left:0; right:0; bottom:0;
+    height: var(--nav-h);
+    max-width:480px; margin:0 auto;
+    background: var(--surface-raised);
+    border-top: 1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-around;
+    z-index: 30;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .nav-btn{
+    background:none; border:none; padding:10px; cursor:pointer; border-radius:12px;
+    color: var(--text-muted); display:flex; align-items:center; justify-content:center;
+  }
+  .nav-btn svg{width:23px; height:23px;}
+  .nav-btn.active{color: var(--accent); background: var(--accent-soft);}
+
+  .placeholder-msg{
+    text-align:center; color:var(--text-muted); padding: 60px 20px; font-size:14px;
+  }
+
+  .cat-form{
+    background: var(--surface-raised); border:1px solid var(--border);
+    border-radius: var(--radius-lg); padding:16px; margin-bottom:16px;
+  }
+  .cat-form input[type=text]{
+    width:100%; border:1px solid var(--border); border-radius: var(--radius-sm); background:var(--surface); color:var(--text);
+    padding:10px 12px; font-size:16px; font-family:var(--font); margin-bottom:10px; outline:none;
+  }
+  .swatches{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;}
+  .swatch{width:26px; height:26px; border-radius:50%; cursor:pointer; border:2px solid transparent;}
+  .swatch.selected{border-color: var(--text);}
+  .cat-form-actions{display:flex; gap:8px;}
+  .btn-primary{background:var(--accent); color:#fff; border:none; border-radius:999px; padding:9px 16px; font-weight:700; font-size:13px; cursor:pointer;}
+  .btn-ghost{background:transparent; color:var(--text-muted); border:1px solid var(--border); border-radius:999px; padding:9px 16px; font-weight:700; font-size:13px; cursor:pointer;}
+
+  /* ---------- Edit buttons on rows ---------- */
+  .row-edit-btn{background:transparent; border:none; color:var(--text-muted); cursor:pointer; padding:4px; display:flex; flex-shrink:0; align-items:center;}
+  .row-edit-btn svg{width:15px;height:15px;}
+  .row-edit-btn.light{color:rgba(255,255,255,.9);}
+  .task-deadline{font-size:12px; color:var(--text-muted); white-space:nowrap;}
+  .task-deadline.soon{color:var(--alert); font-weight:700;}
+
+  /* ---------- Terminé section ---------- */
+  .done-header{
+    display:flex; justify-content:space-between; align-items:center;
+    margin: 18px 0 10px; font-size:12.5px; font-weight:700; color: var(--text-muted);
+    text-transform:uppercase; letter-spacing:.03em; cursor:pointer;
+  }
+  .btn-clear{background:transparent; border:none; color:var(--accent); font-weight:700; font-size:12.5px; cursor:pointer; text-transform:none; letter-spacing:0;}
+  .done-list{transition: max-height .2s ease;}
+  .done-list.collapsed{display:none;}
+  .done-list .item-row{opacity:.55;}
+  .done-list .task-name{text-decoration:line-through;}
+
+  /* ---------- Modal (bottom sheet) ---------- */
+  .modal-overlay{
+    position:fixed; inset:0; background: rgba(35,41,31,.45);
+    display:none; align-items:flex-end; justify-content:center; z-index:100;
+  }
+  .modal-box{
+    background: var(--surface-raised); width:100%; max-width:480px;
+    border-radius: 22px 22px 0 0; padding:22px 20px calc(22px + env(safe-area-inset-bottom));
+    max-height: 85vh; overflow-y:auto;
+  }
+  .modal-box h3{font-size:16px; margin-bottom:16px;}
+  .modal-box input[type=text], .modal-box input[type=date], .modal-box select{
+    width:100%; border:1px solid var(--border); border-radius: var(--radius-sm); color:var(--text);
+    padding:10px 12px; font-size:16px; font-family:var(--font); margin-bottom:12px; outline:none; background:var(--surface);
+  }
+  .modal-box input[type=time]{
+    width:auto; max-width:100%; min-width:0; box-sizing:border-box; border:1px solid var(--border); border-radius: var(--radius-sm); color:var(--text);
+    padding:9px 6px; font-size:16px; font-family:var(--font); margin-bottom:12px; outline:none; background:var(--surface);
+  }
+  .field-row{display:flex; gap:6px;}
+  .field-row > div{flex:1; min-width:0;}
+  .modal-box label{display:block; font-size:11.5px; font-weight:700; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:.03em;}
+  .checkbox-row{display:flex; align-items:center; gap:8px; font-size:14px; font-weight:600; text-transform:none; margin-bottom:14px;}
+  .checkbox-row input{width:19px; height:19px; margin:0; accent-color:var(--accent); flex-shrink:0; cursor:pointer;}
+  .star-toggle-row{
+    display:flex; align-items:center; justify-content:space-between;
+    margin:16px 0 20px; font-size:14px; font-weight:600;
+  }
+  .star-toggle{background:none; border:none; cursor:pointer; padding:2px; color:var(--border); flex-shrink:0;}
+  .star-toggle svg{width:26px; height:26px; display:block;}
+  .star-toggle.active{color:var(--gold);}
+  .modal-actions{display:flex; gap:8px; flex-wrap:wrap; margin-top:6px;}
+  .btn-delete{background: var(--alert-soft); color:var(--alert); border:none; border-radius:999px; padding:9px 16px; font-weight:700; font-size:13px; cursor:pointer;}
+  .btn-delete.armed{background:var(--alert); color:#fff;}
+  .theme-picker-list{display:flex; flex-direction:column; gap:8px; margin-bottom:14px;}
+  .theme-pick-btn{border:none; color:#fff; font-weight:700; font-size:14px; padding:13px 16px; border-radius:14px; text-align:left; cursor:pointer;}
+
+  /* ---------- Plages de temps ---------- */
+  .week-nav{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
+  .week-arrow{
+    width:32px; height:32px; border-radius:50%; border:1px solid var(--border);
+    background:var(--surface-raised); color:var(--text); display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .week-arrow svg{width:15px;height:15px;}
+  .week-label{font-weight:700; font-size:14.5px; text-transform:capitalize;}
+
+  .day-btn-row{display:flex; gap:6px; margin-bottom:10px;}
+  .day-btn{
+    flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
+    background:var(--surface-raised); border:1px solid var(--border); border-radius:12px;
+    padding:8px 2px; cursor:pointer; color:var(--text);
+  }
+  .day-btn-label{font-size:10.5px; color:var(--text-muted); text-transform:uppercase; font-weight:700;}
+  .day-btn-num{font-size:15px; font-weight:700;}
+  .day-btn.selected{background:var(--accent); border-color:var(--accent);}
+  .day-btn.selected .day-btn-label, .day-btn.selected .day-btn-num{color:#fff;}
+  .day-btn.today:not(.selected){border-color:var(--accent); border-width:2px;}
+  .day-btn.today:not(.selected) .day-btn-num{color:var(--accent);}
+
+  .copy-week-banner{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:var(--accent-soft); border-radius:var(--radius-md); padding:12px 14px; margin-bottom:14px;
+    font-size:13px; font-weight:600;
+  }
+  .copy-week-banner .btn-choose{padding:8px 14px; font-size:12.5px; flex-shrink:0;}
+
+  .day-grid-wrap{position:relative; margin-top:24px; padding-left:52px;}
+  .day-grid{position:relative;}
+  .hour-row{
+    position:absolute; left:-52px; right:0; border-top:1px solid var(--border); cursor:pointer;
+  }
+  .hour-row:active{background:rgba(0,0,0,.03);}
+  .hour-row-end{
+    position:absolute; left:-52px; right:0; border-top:1px solid var(--border);
+  }
+  .now-line{
+    position:absolute; left:-52px; right:0; height:2px; background:#2ECC71; z-index:6; pointer-events:none;
+  }
+  .now-dot{
+    position:absolute; left:-3px; top:-4px; width:10px; height:10px; border-radius:50%; background:#2ECC71;
+  }
+  .hour-label{
+    position:absolute; left:0; top:-7px; width:44px; text-align:right;
+    font-size:10.5px; color:var(--text-muted); background:var(--bg); padding-right:8px;
+  }
+  .slot-block{
+    position:absolute; left:0; right:4px; border-radius:8px; padding:4px 8px;
+    color:#fff; overflow:hidden; cursor:pointer; z-index:5; box-shadow:0 1px 3px rgba(35,41,31,.18);
+  }
+  .slot-time{display:block; font-size:10px; font-weight:700; opacity:.9; line-height:1.3;}
+  .slot-cat{display:block; font-size:12.5px; font-weight:700; line-height:1.3;}
+  .slot-note{display:block; font-size:11px; opacity:.9; line-height:1.3;}
+
+  .field-error{
+    display:none; color:var(--alert); background:var(--alert-soft); font-size:12.5px; font-weight:600;
+    padding:8px 10px; border-radius:var(--radius-sm); margin:-2px 0 12px;
+  }
+  .field-error.show{display:block;}
+
+  .link-add-cat{
+    background:none; border:none; color:var(--accent); font-weight:700; font-size:13px;
+    cursor:pointer; padding:6px 0 14px; text-align:left;
+  }
+
+  /* ---------- Habitudes ---------- */
+  .habit-score-row{display:flex; align-items:center; justify-content:center; gap:10px; margin:4px 0 16px;}
+  .habit-score-label{font-weight:700; font-size:13px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em;}
+  .habit-medals{display:flex; gap:6px;}
+  .medal{width:22px; height:22px; border-radius:50%; background:var(--border); display:inline-block; box-shadow: inset 0 1px 2px rgba(0,0,0,.08);}
+  .medal.filled.tier-bronze{background:#CD7F32;}
+  .medal.filled.tier-silver{background:#B7C1CC;}
+  .medal.filled.tier-gold{background:#D9A441;}
+
+  .habit-filters-row{display:flex; gap:8px; margin-bottom:16px;}
+  .habit-filters-row select{
+    flex:1; min-width:0; border:1px solid var(--border); border-radius:var(--radius-sm);
+    padding:9px 8px; font-size:12.5px; font-weight:700; background:var(--surface-raised); color:var(--text);
+  }
+
+  .habit-card{
+    background:var(--surface-raised); border:1px solid var(--border); border-radius:var(--radius-lg);
+    padding:14px 16px; margin-bottom:10px;
+  }
+  .habit-card.done{background:var(--accent-soft); border-color:var(--accent);}
+  .habit-top{display:flex; align-items:center; gap:10px;}
+  .habit-title{flex:1; font-weight:700; font-size:15px;}
+  .habit-desc{font-size:12.5px; color:var(--text-muted); margin:8px 0 2px;}
+
+  .habit-days-row{display:flex; align-items:center; gap:5px; margin-top:10px; flex-wrap:wrap;}
+  .day-circle{
+    position:relative; width:23px; height:23px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:10px; font-weight:700; color:var(--text-muted); background:var(--border);
+  }
+  .day-circle.done{background:var(--accent); color:#fff;}
+  .day-circle.skipped{background:#A8D9C5; color:#fff;}
+  .day-circle.today{box-shadow:0 0 0 2px var(--accent);}
+  .day-circle.connected::before{
+    content:""; position:absolute; right:100%; top:0; bottom:0; width:5px; background:#8FC4B8;
+  }
+  .habit-streak{font-size:11px; color:var(--text-muted); text-align:right; margin-top:8px; font-weight:700;}
+  .skip-btn{
+    background:transparent; border:1px solid var(--border); color:var(--text-muted);
+    border-radius:999px; padding:5px 12px; font-size:11px; font-weight:700; cursor:pointer; flex-shrink:0;
+  }
+  .skip-btn.disabled{opacity:.4; pointer-events:none;}
+
+  .week-recap-medal{
+    width:64px; height:64px; border-radius:50%; margin:4px auto 16px; background:var(--border);
+  }
+
+  /* ---------- Réglages ---------- */
+  .settings-group{margin-bottom:20px;}
+  .settings-label{
+    display:block; font-size:12px; font-weight:700; color:var(--text-muted);
+    text-transform:uppercase; letter-spacing:.03em; margin-bottom:8px;
+  }
+  .settings-group input[type=text], .settings-group select{
+    width:100%; border:1px solid var(--border); border-radius:var(--radius-sm); padding:11px 12px;
+    font-size:16px; font-family:var(--font); background:var(--surface-raised); color:var(--text); outline:none;
+  }
+  .settings-note{font-size:12px; color:var(--text-muted); margin-top:6px; line-height:1.4;}
+  .data-warning{font-style:italic; color:var(--accent); font-size:13px; line-height:1.5; margin-bottom:20px;}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- Screens are injected here by JS -->
+</div>
+
+<div class="quick-add" id="quickAddWrap">
+  <div class="quick-add-inner">
+    <input type="text" id="quickAddInput" placeholder="Créer une nouvelle tâche rapidement">
+    <button class="quick-add-send" id="quickAddSend" aria-label="Ajouter">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box" id="modalBox"></div>
+</div>
+
+<nav class="bottom-nav">
+  <button class="nav-btn" data-tab="dashboard" aria-label="Dashboard">
+    <svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>
+  </button>
+  <button class="nav-btn" data-tab="projets" aria-label="Projets">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7Z"/></svg>
+  </button>
+  <button class="nav-btn" data-tab="plages" aria-label="Plages de temps">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+  </button>
+  <button class="nav-btn" data-tab="habitudes" aria-label="Habitudes">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 3 21 9 15 9"/></svg>
+  </button>
+  <button class="nav-btn" data-tab="reglages" aria-label="Réglages">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+  </button>
+</nav>
+
+<script>
+/* =========================================================================
+   DATA LAYER — IndexedDB
+   ========================================================================= */
+const DB_NAME = "flow_db";
+const DB_VERSION = 1;
+let db;
+
+function openDB(){
+  return new Promise((resolve, reject)=>{
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = (e)=>{
+      const _db = e.target.result;
+      if(!_db.objectStoreNames.contains("themes")){
+        const s = _db.createObjectStore("themes", {keyPath:"id"});
+        s.createIndex("order", "order");
+      }
+      if(!_db.objectStoreNames.contains("projects")){
+        _db.createObjectStore("projects", {keyPath:"id"});
+      }
+      if(!_db.objectStoreNames.contains("tasks")){
+        _db.createObjectStore("tasks", {keyPath:"id"});
+      }
+      if(!_db.objectStoreNames.contains("timeslots")){
+        _db.createObjectStore("timeslots", {keyPath:"id"});
+      }
+      if(!_db.objectStoreNames.contains("habits")){
+        _db.createObjectStore("habits", {keyPath:"id"});
+      }
+      if(!_db.objectStoreNames.contains("settings")){
+        _db.createObjectStore("settings", {keyPath:"key"});
+      }
+    };
+    req.onsuccess = (e)=>{ db = e.target.result; resolve(db); };
+    req.onerror = (e)=> reject(e);
+  });
+}
+
+function tx(store, mode="readonly"){
+  return db.transaction(store, mode).objectStore(store);
+}
+function idbGetAll(store){
+  return new Promise((resolve, reject)=>{
+    const r = tx(store).getAll();
+    r.onsuccess = ()=> resolve(r.result);
+    r.onerror = (e)=> reject(e);
+  });
+}
+function idbPut(store, value){
+  return new Promise((resolve, reject)=>{
+    const r = tx(store, "readwrite").put(value);
+    r.onsuccess = ()=> resolve(value);
+    r.onerror = (e)=> reject(e);
+  });
+}
+function idbDelete(store, id){
+  return new Promise((resolve, reject)=>{
+    const r = tx(store, "readwrite").delete(id);
+    r.onsuccess = ()=> resolve();
+    r.onerror = (e)=> reject(e);
+  });
+}
+function idbClear(store){
+  return new Promise((resolve, reject)=>{
+    const r = tx(store, "readwrite").clear();
+    r.onsuccess = ()=> resolve();
+    r.onerror = (e)=> reject(e);
+  });
+}
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+
+/* Seed the default "Non classé" theme on first run */
+async function seedDefaults(){
+  const themes = await idbGetAll("themes");
+  if(themes.length === 0){
+    await idbPut("themes", {
+      id: "default",
+      name: "Non classé",
+      color: "#8A8F80",
+      forProjects: true,
+      forSlots: false,
+      isDefault: true,
+      order: 0
+    });
+  }
+  if(!themes.find(t=>t.id === "self-time")){
+    await idbPut("themes", {
+      id: "self-time",
+      name: "Temps pour soi",
+      color: "#7A6FB0",
+      forProjects: false,
+      forSlots: true,
+      isDefault: false,
+      order: themes.length
+    });
+  }
+  if(!themes.find(t=>t.id === "appointments")){
+    await idbPut("themes", {
+      id: "appointments",
+      name: "Rendez-vous",
+      color: "#3D7FB5",
+      forProjects: false,
+      forSlots: true,
+      isDefault: false,
+      order: themes.length + 1
+    });
+  }
+  const settings = await idbGetAll("settings");
+  const map = Object.fromEntries(settings.map(s=>[s.key, s.value]));
+  if(map.userName === undefined) await idbPut("settings", {key:"userName", value:""});
+  if(map.weekStart === undefined) await idbPut("settings", {key:"weekStart", value:1}); // 1 = lundi
+  if(map.priorityStreak === undefined) await idbPut("settings", {key:"priorityStreak", value:0});
+  if(map.language === undefined) await idbPut("settings", {key:"language", value:"fr"});
+  if(map.appTheme === undefined) await idbPut("settings", {key:"appTheme", value:"light"});
+  if(map.allowHabitSkip === undefined) await idbPut("settings", {key:"allowHabitSkip", value:false});
+}
+
+/* =========================================================================
+   STATE
+   ========================================================================= */
+const state = {
+  tab: "dashboard",
+  stack: [{screen:"dashboard"}],   // navigation stack for push transitions
+  currentSlotThemeOverride: null,  // manual override of theme in the dashboard dropdown
+  currentItemOverride: null,       // force l'affichage d'un projet/tâche précis (boutons "passer à celle-ci")
+  projetsStackMemory: null,        // dernier endroit visité dans l'onglet Projets
+  plagesWeekOffset: 0,             // 0 = semaine courante, -1 = précédente, +1 = suivante...
+  plagesSelectedDate: null,        // date (AAAA-MM-JJ) du jour affiché dans Plages de temps
+  habitsMomentFilter: null,        // moment de la journée filtré sur la page Habitudes
+  habitsEnergyLevel: null,         // niveau d'énergie choisi (change les descriptions affichées)
+  language: "fr",                  // langue courante de l'interface (fr/en)
+};
+
+const PRIORITY_RANK = {"elevee":3, "moyenne":2, "faible":1, "aucune":0, undefined:0, null:0};
+
+/* =========================================================================
+   TRADUCTIONS — première passe : les écrans et messages les plus visibles.
+   D'autres textes (placeholders, notes secondaires) restent en français pour l'instant.
+   ========================================================================= */
+const STRINGS = {
+  fr: {
+    catégories: "Catégories", projets: "Projets", sousTaches: "Sous-tâches",
+    plagesDeTemps: "Plages horaires", habitudes: "Habitudes", reglages: "Réglages",
+    bonjour: "Bonjour", bonsoir: "Bonsoir", bonApresMidi: "Bon après-midi",
+    toutEstTermine: "Tout est terminé !", rienDAttente: "Rien d'autre en attente pour le moment.",
+    etSiTuAvancais: (n)=>`Et si tu avançais sur « ${n} » ?`, passerACetteTache: "Passer à cette tâche",
+    tempsPourSoi: "Aucune plage horaire planifiée.<br>C'est l'occasion de prendre du temps pour toi :)", choisirCategorie: "Choisir une catégorie de projets",
+    planifierPlage: "Planifier une plage horaire",
+    tachesCount: (done,total)=>`${done}/${total} tâches`,
+    projetEnCours: "Projet en cours :", tacheEnCours: "Tâche en cours", prochaineTache: "Prochaine tâche",
+    aucuneAutreTache: "Aucune autre tâche", passerALaProchaine: "Passer à la prochaine tâche",
+    afficherToutes: "Afficher toutes les prochaines tâches", echeance: "échéance",
+    enregistrer: "Enregistrer", annuler: "Annuler", supprimer: "Supprimer",
+    confirmerSuppression: "Confirmer la suppression", creer: "Créer",
+    terminé: (n)=>`Terminé (${n})`, vider: "Vider",
+    score: "Score", matin: "Matin", apresMidi: "Après-midi", soir: "Soir",
+    toutesLesHabitudes: "Toutes les habitudes", energieFaible: "Énergie faible",
+    energieNormale: "Énergie normale", energieElevee: "Énergie élevée", passer: "Passer",
+    joursAffilee: (n)=>`${n} jour${n>1?'s':''} d'affilée`, semainesAffilee: (n)=>`${n} semaine${n>1?'s':''} d'affilée`,
+    reprendreSemaine: "Reprendre les plages de la semaine dernière ?", copier: "Copier",
+    ajouterPlage: "Ajouter une plage", modifierPlage: "Modifier une plage",
+    debut: "Début", fin: "Fin", categorie: "Catégorie", description: "Description (optionnelle)",
+    ajouterNouvelleCategorie: "+ Ajouter une nouvelle catégorie",
+    fermer: "Fermer",
+    semaineOr: "Semaine en or !", msgOr: "Régularité parfaite cette semaine, bravo pour cet engagement 🥇",
+    semaineArgent: "Semaine en argent !", msgArgent: "Belle régularité cette semaine, continue comme ça 🥈",
+    semaineBronze: "Semaine en bronze", msgBronze: "Chaque petit pas compte, la semaine prochaine ira encore mieux 🥉",
+    nouvelleSemaine: "Nouvelle semaine !", msgNeutre: "La semaine passée a été plus calme, ce n'est pas grave : on repart à zéro.",
+    modifierProjet: "Modifier un projet", ajouterProjet: "Ajouter un projet",
+    modifierTache: "Modifier une tâche", ajouterTache: "Ajouter une tâche",
+    nom: "Nom", echeanceOpt: "Échéance (optionnelle)", priorite: "Priorité",
+    faible: "Faible", moyenne: "Moyenne", elevee: "Élevée", aucunePriorite: "Aucune",
+    recurrenceLabel: "Récurrence", aucuneRec: "Aucune", toutesLesSemaines: "Toutes les semaines",
+    toutesLes2Semaines: "Toutes les 2 semaines", tousLesMois: "Tous les mois", tousLesAns: "Tous les ans",
+    tachePrioritaireJour: "Tâche prioritaire du jour",
+    rienIci: "Rien ici pour l'instant.", aucuneSousTache: "Aucune sous-tâche pour l'instant.",
+    creerTacheRapide: "Créer une nouvelle tâche rapidement", creerSousTacheRapide: "Créer une nouvelle sous-tâche",
+    modifierCategorie: "Modifier la catégorie", nomCategorie: "Nom de la catégorie",
+    prenom: "Prénom", langue: "Langue", premierJourSemaine: "Premier jour de la semaine", theme: "Thème",
+    tonPrenom: "Ton prénom", francais: "Français", anglais: "English",
+    clair: "Clair", sombre: "Sombre", creme: "Crème",
+    aucuneHabitude: "Aucune habitude pour l'instant.",
+    exDescFaible: "Ex : 3 pompes", exDescNormale: "Ex : 10 pompes", exDescElevee: "Ex : 15 pompes",
+    exSlotNote: "Ex : RDV dentiste, appel avec...",
+    dataWarning: "Ceci est une web-app et les données sont stockées sur ton smartphone. Pense à les exporter régulièrement avec le bouton ci-dessous pour ne pas les perdre.",
+    autoriserSkip: "Autoriser à passer un jour d'habitude par semaine sans perdre le score",
+    skipNote: "Fait apparaître un bouton \"Passer\" sur chaque habitude, utilisable une fois par semaine et par habitude.",
+    exporterMesDonnees: "Exporter mes données", importerMesDonnees: "Importer mes données",
+    exportTitle: "Export",
+    exportMsg: "Un fichier contenant toutes tes données dans l'application va être téléchargé. Sur iPhone, appuie sur l'icône de partage ↑ puis « Enregistrer dans Fichiers » pour le sauvegarder. Garde-le précieusement : il te servira à restaurer tes données si besoin.",
+    importConfirmTitle: "Importer des données",
+    importConfirmMsg: "Ceci va remplacer toutes tes données actuelles par celles du fichier importé. Cette action est irréversible.",
+    importConfirmBtn: "Remplacer mes données",
+    importErrorTitle: "Fichier invalide",
+    importErrorMsg: "Ce fichier ne semble pas être un export valide de Beeziday.",
+    dimanche:"Dimanche", lundi:"Lundi", mardi:"Mardi", mercredi:"Mercredi", jeudi:"Jeudi", vendredi:"Vendredi", samedi:"Samedi",
+    touteLaJournee: "Toute la journée", ajouterHabitude: "Ajouter une habitude", modifierHabitude: "Modifier une habitude",
+    nomHabitude: "Nom de l'habitude", frequence: "Fréquence", tousLesJours: "Tous les jours", xFoisParSemaine: "X fois par semaine",
+    combienFois: "Combien de fois par semaine", momentJournee: "Moment de la journée",
+    descFaibleLabel: "Description — énergie faible (optionnelle)", descNormaleLabel: "Description — énergie normale (optionnelle)",
+    descEleveeLabel: "Description — énergie élevée (optionnelle)",
+  },
+  en: {
+    catégories: "Categories", projets: "Projects", sousTaches: "Subtasks",
+    plagesDeTemps: "Time blocks", habitudes: "Habits", reglages: "Settings",
+    bonjour: "Good morning", bonsoir: "Good evening", bonApresMidi: "Good afternoon",
+    toutEstTermine: "All done!", rienDAttente: "Nothing else pending right now.",
+    etSiTuAvancais: (n)=>`How about working on "${n}"?`, passerACetteTache: "Switch to this task",
+    tempsPourSoi: "No time block planned.<br>It's a good moment to take some time for yourself :)", choisirCategorie: "Choose a project category",
+    planifierPlage: "Plan a time block",
+    tachesCount: (done,total)=>`${done}/${total} tasks`,
+    projetEnCours: "Current project:", tacheEnCours: "Current task", prochaineTache: "Next task",
+    aucuneAutreTache: "No other task", passerALaProchaine: "Skip to next task",
+    afficherToutes: "Show all upcoming tasks", echeance: "due",
+    enregistrer: "Save", annuler: "Cancel", supprimer: "Delete",
+    confirmerSuppression: "Confirm deletion", creer: "Create",
+    terminé: (n)=>`Done (${n})`, vider: "Clear",
+    score: "Score", matin: "Morning", apresMidi: "Afternoon", soir: "Evening",
+    toutesLesHabitudes: "All habits", energieFaible: "Low energy",
+    energieNormale: "Normal energy", energieElevee: "High energy", passer: "Skip",
+    joursAffilee: (n)=>`${n} day${n>1?'s':''} in a row`, semainesAffilee: (n)=>`${n} week${n>1?'s':''} in a row`,
+    reprendreSemaine: "Repeat last week's schedule?", copier: "Copy",
+    ajouterPlage: "Add a time block", modifierPlage: "Edit time block",
+    debut: "Start", fin: "End", categorie: "Category", description: "Description (optional)",
+    ajouterNouvelleCategorie: "+ Add a new category",
+    fermer: "Close",
+    semaineOr: "Golden week!", msgOr: "Perfect consistency this week, well done for the commitment 🥇",
+    semaineArgent: "Silver week!", msgArgent: "Great consistency this week, keep it up 🥈",
+    semaineBronze: "Bronze week", msgBronze: "Every small step counts, next week will be even better 🥉",
+    nouvelleSemaine: "New week!", msgNeutre: "Last week was quieter, that's alright — starting fresh.",
+    modifierProjet: "Edit project", ajouterProjet: "Add a project",
+    modifierTache: "Edit task", ajouterTache: "Add a task",
+    nom: "Name", echeanceOpt: "Due date (optional)", priorite: "Priority",
+    faible: "Low", moyenne: "Medium", elevee: "High", aucunePriorite: "None",
+    recurrenceLabel: "Recurrence", aucuneRec: "None", toutesLesSemaines: "Every week",
+    toutesLes2Semaines: "Every 2 weeks", tousLesMois: "Every month", tousLesAns: "Every year",
+    tachePrioritaireJour: "Priority task of the day",
+    rienIci: "Nothing here yet.", aucuneSousTache: "No subtasks yet.",
+    creerTacheRapide: "Quickly add a task", creerSousTacheRapide: "Add a new subtask",
+    modifierCategorie: "Edit category", nomCategorie: "Category name",
+    prenom: "First name", langue: "Language", premierJourSemaine: "First day of the week", theme: "Theme",
+    tonPrenom: "Your first name", francais: "Français", anglais: "English",
+    clair: "Light", sombre: "Dark", creme: "Cream",
+    aucuneHabitude: "No habits yet.",
+    exDescFaible: "E.g.: 3 push-ups", exDescNormale: "E.g.: 10 push-ups", exDescElevee: "E.g.: 15 push-ups",
+    exSlotNote: "E.g.: dentist appointment, call with...",
+    dataWarning: "This is a web app and your data is stored on your phone. Remember to export it regularly using the button below so you don't lose it.",
+    autoriserSkip: "Allow skipping one habit day per week without losing your score",
+    skipNote: "Adds a \"Skip\" button on each habit, usable once a week per habit.",
+    exporterMesDonnees: "Export my data", importerMesDonnees: "Import my data",
+    exportTitle: "Export",
+    exportMsg: "A file containing all your app data will be downloaded. On iPhone, tap the share icon ↑ then \"Save to Files\" to keep it. Keep it safe — you'll need it to restore your data if needed.",
+    importConfirmTitle: "Import data",
+    importConfirmMsg: "This will replace all your current data with the data from the imported file. This action cannot be undone.",
+    importConfirmBtn: "Replace my data",
+    importErrorTitle: "Invalid file",
+    importErrorMsg: "This file doesn't look like a valid Beeziday export.",
+    dimanche:"Sunday", lundi:"Monday", mardi:"Tuesday", mercredi:"Wednesday", jeudi:"Thursday", vendredi:"Friday", samedi:"Saturday",
+    touteLaJournee: "All day", ajouterHabitude: "Add a habit", modifierHabitude: "Edit habit",
+    nomHabitude: "Habit name", frequence: "Frequency", tousLesJours: "Every day", xFoisParSemaine: "X times a week",
+    combienFois: "How many times a week", momentJournee: "Time of day",
+    descFaibleLabel: "Description — low energy (optional)", descNormaleLabel: "Description — normal energy (optional)",
+    descEleveeLabel: "Description — high energy (optional)",
+  }
+};
+function tr(key, ...args){
+  const dict = STRINGS[state.language] || STRINGS.fr;
+  const val = dict[key] !== undefined ? dict[key] : STRINGS.fr[key];
+  return typeof val === "function" ? val(...args) : val;
+}
+
+/* Les 3 catégories créées automatiquement au premier lancement affichent un nom traduit
+   dynamiquement selon la langue, TANT QUE la personne ne les a pas renommées elle-même. */
+const DEFAULT_THEME_NAMES = {
+  "default": {fr:"Non classé", en:"Uncategorized"},
+  "self-time": {fr:"Temps pour soi", en:"Me time"},
+  "appointments": {fr:"Rendez-vous", en:"Appointments"},
+};
+function themeDisplayName(theme){
+  if(!theme) return "";
+  const preset = DEFAULT_THEME_NAMES[theme.id];
+  if(preset && !theme.nameCustomized) return preset[state.language] || preset.fr;
+  return theme.name;
+}
+
+/* =========================================================================
+   SVG ICONS (small helpers)
+   ========================================================================= */
+const ICONS = {
+  chevRight: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>`,
+  back: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 6 9 12 15 18"/></svg>`,
+  plus: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
+  check: `<svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+  star: `<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15 9 22 9.5 16.5 14.5 18 22 12 18 6 22 7.5 14.5 2 9.5 9 9"/></svg>`,
+  alert: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>`,
+  repeat: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>`,
+  pencil: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`,
+  coffeeCup: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3c.3 1 .1 1.6-.4 2.3-.6.8-.8 1.4-.4 2.4M13.5 3c.3 1 .1 1.6-.4 2.3-.6.8-.8 1.4-.4 2.4"/><path d="M4 9h13v5.5A4.5 4.5 0 0 1 12.5 19h-4A4.5 4.5 0 0 1 4 14.5V9Z"/><path d="M17 10.5h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M3 22.5h15"/></svg>`,
+};
+
+/* Icône de priorité : 3 barres croissantes, dont N sont remplies selon le niveau.
+   Le nombre de barres remplies porte l'information (pas seulement la couleur). */
+function priorityIcon(level){
+  if(!level || level === "aucune") return "";
+  const filledCount = {faible:1, moyenne:2, elevee:3}[level] || 0;
+  const heights = [6, 10, 14];
+  let bars = "";
+  for(let i=0;i<3;i++){
+    const filled = i < filledCount;
+    bars += `<rect x="${i*7}" y="${16-heights[i]}" width="4.5" height="${heights[i]}" rx="1" fill="${filled ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.3"/>`;
+  }
+  return `<svg class="priority-icon priority-${level}" viewBox="0 0 21 16" width="15" height="13">${bars}</svg>`;
+}
+
+/* =========================================================================
+   UTIL — dates & priorities
+   ========================================================================= */
+function daysUntil(dateStr){
+  if(!dateStr) return null;
+  const now = new Date(); now.setHours(0,0,0,0);
+  const d = new Date(dateStr); d.setHours(0,0,0,0);
+  return Math.round((d - now) / 86400000);
+}
+function formatDeadline(dateStr){
+  if(!dateStr) return "";
+  const n = daysUntil(dateStr);
+  const d = new Date(dateStr);
+  const base = d.toLocaleDateString(currentLocale(), {day:"numeric", month:"short"});
+  if(n < 0) return `${base} (dépassée)`;
+  if(n === 0) return "Aujourd'hui";
+  if(n === 1) return "Demain";
+  return base;
+}
+
+/* Formatage de date locale AAAA-MM-JJ, sans passer par toISOString() (qui bascule en UTC
+   et peut décaler le jour selon l'heure et le fuseau horaire). */
+/* Locale utilisée pour le formatage des dates, cohérente avec la langue choisie */
+function currentLocale(){
+  return state.language === "en" ? "en-GB" : "fr-FR";
+}
+
+function toISODate(d){
+  const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,"0"), day = String(d.getDate()).padStart(2,"0");
+  return `${y}-${m}-${day}`;
+}
+function parseISODate(iso){
+  const [y,m,d] = iso.split("-").map(Number);
+  return new Date(y, m-1, d);
+}
+/* Premier jour de la semaine contenant "dateObj", selon le jour de départ choisi dans les réglages (0=dim...6=sam) */
+function startOfWeekContaining(dateObj, weekStartDay){
+  const d = new Date(dateObj); d.setHours(0,0,0,0);
+  const diff = (d.getDay() - weekStartDay + 7) % 7;
+  d.setDate(d.getDate() - diff);
+  return d;
+}
+function getWeekDates(offsetWeeks, weekStartDay){
+  const base = startOfWeekContaining(new Date(), weekStartDay);
+  base.setDate(base.getDate() + offsetWeeks*7);
+  const days = [];
+  for(let i=0;i<7;i++){ const d = new Date(base); d.setDate(base.getDate()+i); days.push(d); }
+  return days;
+}
+function formatWeekLabel(d1, d2){
+  if(d1.getMonth() === d2.getMonth()){
+    return `${d1.getDate()} – ${d2.toLocaleDateString(currentLocale(),{day:"numeric", month:"long"})}`;
+  }
+  return `${d1.toLocaleDateString(currentLocale(),{day:"numeric", month:"short"})} – ${d2.toLocaleDateString(currentLocale(),{day:"numeric", month:"short"})}`;
+}
+
+/* Pour une plage horaire, "00:00" en heure de FIN désigne minuit en fin de journée (1440 min),
+   jamais le début de journée — sinon une plage ne pourrait jamais aller jusqu'à minuit. */
+function slotStartMinutes(t){
+  const [h,m] = t.split(":").map(Number);
+  return h*60 + m;
+}
+function slotEndMinutes(t){
+  const [h,m] = t.split(":").map(Number);
+  return (h===0 && m===0) ? 24*60 : h*60 + m;
+}
+
+/* Sort a list of active items (projects or standalone tasks) by:
+   1. priority desc  2. deadline asc (no deadline last)  3. manual order asc */
+function sortByDashboardRule(items){
+  return [...items].sort((a,b)=>{
+    const pr = PRIORITY_RANK[b.priority] - PRIORITY_RANK[a.priority];
+    if(pr !== 0) return pr;
+    const da = a.deadline ? new Date(a.deadline).getTime() : Infinity;
+    const db_ = b.deadline ? new Date(b.deadline).getTime() : Infinity;
+    if(da !== db_) return da - db_;
+    return (a.order||0) - (b.order||0);
+  });
+}
+
+/* =========================================================================
+   DATA HELPERS
+   ========================================================================= */
+async function getAllActive(){
+  const [projects, tasks] = await Promise.all([idbGetAll("projects"), idbGetAll("tasks")]);
+  return {
+    projects: projects.filter(p=>p.status !== "idea"),
+    tasks: tasks.filter(t=>t.status !== "idea")
+  };
+}
+
+async function getCurrentTimeSlot(){
+  const slots = await idbGetAll("timeslots");
+  const todayISO = toISODate(new Date());
+  const now = new Date();
+  const minutesNow = now.getHours()*60 + now.getMinutes();
+  return slots.find(s=>{
+    if(s.date !== todayISO) return false;
+    return minutesNow >= slotStartMinutes(s.start) && minutesNow < slotEndMinutes(s.end);
+  }) || null;
+}
+
+/* Un projet ne peut être sélectionné sur le Dashboard que s'il a au moins une sous-tâche
+   et qu'elles ne sont pas toutes faites. Un projet vide (0/0) reste visible dans Projets,
+   mais n'a rien à montrer sur le Dashboard tant qu'on ne lui a pas ajouté de tâche. */
+async function getProjectDashboardStatus(project){
+  const subs = await getSubtasks(project.id);
+  return { empty: subs.length === 0, done: subs.length > 0 && subs.every(t=>t.status === "done") };
+}
+
+/* Construit la liste des candidats actifs (projets non vides/non terminés + tâches seules non faites) pour un thème */
+async function buildCandidates(themeId, excludeId){
+  const {projects, tasks} = await getAllActive();
+  const projectCandidates = projects.filter(p=>p.themeId === themeId && p.id !== excludeId);
+  const statuses = await Promise.all(projectCandidates.map(getProjectDashboardStatus));
+  return [
+    ...projectCandidates.filter((p,i)=>!statuses[i].empty && !statuses[i].done).map(p=>({...p, kind:"project"})),
+    ...tasks.filter(t=>!t.projectId && t.themeId === themeId && t.status !== "done" && t.id !== excludeId).map(t=>({...t, kind:"task"}))
+  ];
+}
+
+/* Choisit l'élément (projet ou tâche seule) à afficher pour un thème donné.
+   Si state.currentItemOverride pointe vers un candidat encore valide de ce thème, il est
+   affiché directement (utilisé par les boutons "passer à cette tâche" / alerte échéance),
+   sinon on applique l'algorithme de tri habituel (priorité > échéance > ordre manuel). */
+async function pickItemForTheme(themeId){
+  const candidates = await buildCandidates(themeId, null);
+  if(candidates.length === 0) return null;
+  if(state.currentItemOverride){
+    const forced = candidates.find(c=>c.id === state.currentItemOverride);
+    if(forced) return forced;
+  }
+  return sortByDashboardRule(candidates)[0];
+}
+
+/* Elément à afficher tous thèmes confondus (fallback "tout est terminé") */
+async function pickItemAnyTheme(excludeId){
+  const {projects, tasks} = await getAllActive();
+  const projectCandidates = projects.filter(p=>p.id !== excludeId);
+  const statuses = await Promise.all(projectCandidates.map(getProjectDashboardStatus));
+  const candidates = [
+    ...projectCandidates.filter((p,i)=>!statuses[i].empty && !statuses[i].done).map(p=>({...p, kind:"project"})),
+    ...tasks.filter(t=>!t.projectId && t.id !== excludeId && t.status !== "done").map(t=>({...t, kind:"task"}))
+  ];
+  if(candidates.length === 0) return null;
+  return sortByDashboardRule(candidates)[0];
+}
+
+async function getUpcomingDeadlineAlerts(themeId, excludeId){
+  const {projects, tasks} = await getAllActive();
+  const themeProjects = projects.filter(p=>p.themeId === themeId);
+  const statuses = await Promise.all(themeProjects.map(getProjectDashboardStatus));
+  const all = [
+    ...themeProjects.filter((p,i)=>!statuses[i].empty && !statuses[i].done),
+    ...tasks.filter(t=>!t.projectId && t.themeId === themeId && t.status !== "done")
+  ];
+  return all.filter(i=> i.id !== excludeId && i.deadline && daysUntil(i.deadline) <= 14 && daysUntil(i.deadline) >= 0);
+}
+
+async function getSubtasks(projectId){
+  const tasks = await idbGetAll("tasks");
+  return tasks.filter(t=>t.projectId === projectId).sort((a,b)=>(a.order||0)-(b.order||0));
+}
+
+async function getCurrentAndNextTask(item, themeId){
+  // item est soit un vrai projet (a des sous-tâches), soit une tâche seule (kind:"task")
+  if(item.kind === "task"){
+    // La "prochaine" tâche/projet, pour une tâche seule, c'est ce qui serait affiché juste après elle
+    const rest = await buildCandidates(themeId, item.id);
+    const next = rest.length ? sortByDashboardRule(rest)[0] : null;
+    return {current: item, next, progress: item.status === "done" ? 1 : 0, total:1, done:item.status==="done"?1:0};
+  }
+  const subtasks = await getSubtasks(item.id);
+  const todo = subtasks.filter(t=>t.status !== "done");
+  const done = subtasks.length - todo.length;
+  return {
+    current: todo[0] || null,
+    next: todo[1] || null,
+    progress: subtasks.length ? done/subtasks.length : 0,
+    total: subtasks.length,
+    done
+  };
+}
+
+/* =========================================================================
+   RENDER — App shell / nav
+   ========================================================================= */
+const app = document.getElementById("app");
+const PROJETS_SCREENS = ["cats","catDetail","projectDetail"];
+
+function setActiveTab(tab){
+  state.tab = tab;
+  document.querySelectorAll(".nav-btn").forEach(b=>{
+    b.classList.toggle("active", b.dataset.tab === tab);
+  });
+  document.getElementById("quickAddWrap").style.display =
+    (tab === "projets") ? "flex" : (tab === "dashboard" ? "none" : "none");
+}
+
+document.querySelectorAll(".nav-btn").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    const tab = btn.dataset.tab;
+    // En quittant l'onglet Projets, on retient où on était pour y revenir plus tard
+    if(PROJETS_SCREENS.includes(state.stack[state.stack.length-1].screen)){
+      state.projetsStackMemory = [...state.stack];
+    }
+    if(tab === "projets"){
+      state.stack = state.projetsStackMemory ? [...state.projetsStackMemory] : [{screen:"cats"}];
+    } else {
+      state.stack = [{screen: tab}];
+    }
+    renderStack("none");
+  });
+});
+
+/* direction: "push" (avance, slide depuis la droite), "pop" (retour, slide depuis la gauche),
+   ou "none" (pas d'animation — changement d'onglet, rafraîchissement après une action) */
+async function renderStack(direction){
+  direction = direction || "none";
+
+  let top = state.stack[state.stack.length-1];
+  if(top.screen === "projets"){
+    top = {screen:"cats"};
+    state.stack[state.stack.length-1] = top;
+  }
+
+  setActiveTab(top.screen === "dashboard" ? "dashboard" :
+    PROJETS_SCREENS.includes(top.screen) ? "projets" :
+    top.screen);
+
+  let html = "";
+  if(top.screen === "dashboard") html = await renderDashboard();
+  else if(top.screen === "cats") html = await renderCategories();
+  else if(top.screen === "catDetail") html = await renderCategoryDetail(top.themeId);
+  else if(top.screen === "projectDetail") html = await renderProjectDetail(top.projectId);
+  else if(top.screen === "plages") html = await renderPlages();
+  else if(top.screen === "habitudes") html = await renderHabitudes();
+  else if(top.screen === "reglages") html = await renderReglages();
+
+  const oldScreen = app.querySelector(".screen");
+  const newScreen = document.createElement("div");
+  newScreen.className = "screen";
+  newScreen.innerHTML = html;
+
+  if(direction === "push" && oldScreen){
+    newScreen.style.transform = "translateX(100%)";
+    app.appendChild(newScreen);
+    void newScreen.offsetHeight; // force reflow
+    requestAnimationFrame(()=>{
+      newScreen.style.transform = "translateX(0)";
+      oldScreen.style.transform = "translateX(-25%)";
+    });
+    newScreen.addEventListener("transitionend", ()=> oldScreen.remove(), {once:true});
+  } else if(direction === "pop" && oldScreen){
+    newScreen.style.transform = "translateX(-25%)";
+    app.insertBefore(newScreen, app.firstChild);
+    void newScreen.offsetHeight;
+    oldScreen.style.transform = "translateX(100%)";
+    requestAnimationFrame(()=>{
+      newScreen.style.transform = "translateX(0)";
+    });
+    oldScreen.addEventListener("transitionend", ()=> oldScreen.remove(), {once:true});
+  } else {
+    app.innerHTML = "";
+    newScreen.style.transform = "translateX(0)";
+    app.appendChild(newScreen);
+  }
+
+  attachScreenEvents(top.screen, newScreen);
+
+  document.getElementById("quickAddWrap").style.display =
+    PROJETS_SCREENS.includes(top.screen) ? "flex" : "none";
+
+  // Quick add context text
+  const input = document.getElementById("quickAddInput");
+  if(input){
+    if(top.screen === "catDetail") input.placeholder = tr("creerTacheRapide");
+    else if(top.screen === "projectDetail") input.placeholder = tr("creerSousTacheRapide");
+    else input.placeholder = tr("creerTacheRapide");
+  }
+}
+
+function pushScreen(entry){
+  state.stack.push(entry);
+  renderStack("push");
+}
+function popScreen(){
+  if(state.stack.length > 1){ state.stack.pop(); renderStack("pop"); }
+}
+
+function renderPlaceholder(title, msg){
+  return `<div class="screen-header"><h1 class="screen-title">${title}</h1></div>
+  <div class="placeholder-msg">${msg}</div>`;
+}
+
+/* =========================================================================
+   RENDER — Dashboard
+   ========================================================================= */
+function greetingWord(){
+  const h = new Date().getHours();
+  if(h < 5) return tr("bonsoir");
+  if(h < 12) return tr("bonjour");
+  if(h < 18) return tr("bonApresMidi");
+  return tr("bonsoir");
+}
+
+async function renderDashboard(){
+  const settings = Object.fromEntries((await idbGetAll("settings")).map(s=>[s.key,s.value]));
+  const name = settings.userName ? `, ${settings.userName}` : "";
+  const themes = await idbGetAll("themes");
+
+  const slot = await getCurrentTimeSlot();
+  const activeThemeId = state.currentSlotThemeOverride || (slot ? slot.themeId : null);
+
+  let bodyHtml = "";
+
+  if(!activeThemeId){
+    bodyHtml += `
+    <div class="empty-slot-box">
+      <div class="empty-slot-icon">${ICONS.coffeeCup}</div>
+      <p>${tr("tempsPourSoi")}</p>
+      <button class="btn-choose" id="chooseCatBtn">${tr("choisirCategorie")}</button>
+      <button class="btn-choose" id="planSlotBtn" style="display:block;margin:10px auto 0;">${tr("planifierPlage")}</button>
+    </div>`;
+  } else {
+    const theme = themes.find(t=>t.id === activeThemeId);
+
+    if(theme && !theme.forProjects){
+      // Catégorie réservée aux plages (pas de projets associés, ex : "Rendez-vous") :
+      // pas de sélection à faire, on affiche juste son nom et la description de la plage en cours.
+      const noteToShow = (slot && slot.themeId === activeThemeId) ? slot.note : null;
+      bodyHtml += `
+      <div class="slot-only-card" style="background:${theme.color}">
+        <p class="big">${escapeHtml(themeDisplayName(theme))}</p>
+        ${noteToShow ? `<p class="small">${escapeHtml(noteToShow)}</p>` : ""}
+      </div>`;
+    } else {
+      const item = await pickItemForTheme(activeThemeId);
+
+      // Alerte échéances proches, uniquement dans la même catégorie que celle affichée
+      const alerts = await getUpcomingDeadlineAlerts(activeThemeId, item ? item.id : null);
+      if(alerts.length){
+        bodyHtml += `<div class="alert-banner-wrap">` + alerts.map(a=>`
+          <div class="alert-banner">
+            ${ICONS.alert}
+            <span class="alert-text"><strong>${escapeHtml(a.name)}</strong> — ${tr("echeance")} ${formatDeadline(a.deadline)}</span>
+            <button class="alert-switch" data-switch-theme="${a.themeId}" data-switch-item="${a.id}" aria-label="Basculer sur ce projet">${ICONS.chevRight}</button>
+          </div>
+        `).join("") + `</div>`;
+      }
+
+      if(!item){
+        const fallback = await pickItemAnyTheme(null);
+        bodyHtml += renderFinishedBox(fallback);
+      } else {
+        const {current, next, progress, total, done} = await getCurrentAndNextTask(item, activeThemeId);
+
+        if(item.kind === "project"){
+          const pct = Math.round(progress*100);
+          bodyHtml += `
+          <div class="project-card">
+            <div class="top-row">
+              <div class="p-title"><span class="p-label">${tr("projetEnCours")}</span> ${escapeHtml(item.name)}</div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                ${priorityIcon(item.priority)}
+                ${item.deadline ? `<div class="p-deadline">${formatDeadline(item.deadline)}</div>` : ""}
+              </div>
+            </div>
+            <div class="progress-row">
+              <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+              <span class="progress-pct">${pct}%</span>
+            </div>
+          </div>`;
+        }
+
+        bodyHtml += `<div class="row-title"><h2>${tr("tacheEnCours")}</h2></div>`;
+        if(current){
+          bodyHtml += renderTaskCard(current, false);
+        } else {
+          bodyHtml += renderFinishedBox(await pickItemAnyTheme(item.id));
+        }
+
+        if(current){
+          bodyHtml += `<div class="row-title"><h2>${tr("prochaineTache")}</h2></div>`;
+          if(next){
+            bodyHtml += renderTaskCard(next, true);
+          } else {
+            bodyHtml += `<div class="task-card next"><div class="check-circle"></div><div class="task-name">${tr("aucuneAutreTache")}</div></div>`;
+          }
+          if(next){
+            bodyHtml += `<button class="btn-skip-next" id="skipNextBtn" data-item-kind="${item.kind}" data-current-id="${current.id}" data-next-id="${next.id}">${tr("passerALaProchaine")}</button>`;
+          }
+          if(item.kind === "project"){
+            bodyHtml += `<a class="link-more" id="showAllTasksLink" data-project="${item.id}">${tr("afficherToutes")}</a>`;
+          }
+        }
+      }
+    }
+
+    // Sélecteur de thème (menu déroulant à côté de la plage)
+    bodyHtml = `
+    <div class="slot-row">
+      <div class="slot-time">${slot ? `${slot.start}–${slot.end}` : "Aucune plage"}</div>
+      <select class="slot-select" id="slotThemeSelect">
+        ${themes.filter(t=>t.forSlots || t.forProjects).map(t=>`<option value="${t.id}" ${t.id===activeThemeId?"selected":""}>${escapeHtml(themeDisplayName(t))}</option>`).join("")}
+      </select>
+    </div>` + bodyHtml;
+  }
+
+  return `<div class="greeting">${greetingWord()}${name} !</div>` + bodyHtml;
+}
+
+function renderFinishedBox(suggestion){
+  if(!suggestion){
+    return `
+    <div class="finished-box">
+      <p class="big">${tr("toutEstTermine")}</p>
+      <p class="small">${tr("rienDAttente")}</p>
+    </div>`;
+  }
+  return `
+  <div class="finished-box">
+    <p class="big">${tr("toutEstTermine")}</p>
+    <p class="small">${tr("etSiTuAvancais", escapeHtml(suggestion.name))}</p>
+    <button class="btn-choose" data-switch-theme="${suggestion.themeId}" data-switch-item="${suggestion.id}">${tr("passerACetteTache")}</button>
+  </div>`;
+}
+
+function renderTaskCard(task, isNext){
+  return `
+  <div class="task-card ${isNext?'next':''}" ${isNext?'':`data-task="${task.id}"`}>
+    <div class="check-circle ${task.status==='done'?'done':''}" ${isNext?'':`data-checktask="${task.id}"`}>${ICONS.check}</div>
+    <div class="task-name">${escapeHtml(task.name)}</div>
+    ${priorityIcon(task.priority)}
+    <div class="star ${task.starred ? '' : 'off'}">${ICONS.star}</div>
+  </div>`;
+}
+
+function escapeHtml(str){
+  const d = document.createElement("div");
+  d.textContent = str || "";
+  return d.innerHTML;
+}
+
+/* =========================================================================
+   RENDER — Catégories
+   ========================================================================= */
+async function renderCategories(){
+  const themes = (await idbGetAll("themes")).filter(t=>t.forProjects).sort((a,b)=>(a.order||0)-(b.order||0));
+  return `
+  <div class="screen-header">
+    <h1 class="screen-title" style="flex:1">${tr("catégories")}</h1>
+    <button class="icon-btn" id="addCatBtn">${ICONS.plus}</button>
+  </div>
+  <div id="catFormHolder"></div>
+  <div id="catList">
+    ${themes.map(t=>`
+      <div class="cat-row" style="background:${t.color}" data-cat="${t.id}">
+        <span class="cat-name">${escapeHtml(themeDisplayName(t))}</span>
+        <button class="row-edit-btn light" data-edit-cat="${t.id}" aria-label="Modifier">${ICONS.pencil}</button>
+        <span class="chev">${ICONS.chevRight}</span>
+      </div>
+    `).join("")}
+  </div>`;
+}
+
+const SWATCH_COLORS = ["#2F6F63","#D9A441","#C1543C","#7A6FB0","#3D7FB5","#5C8A3A","#B5548C","#8A8F80"];
+
+function catFormHtml(){
+  return `
+  <div class="cat-form">
+    <input type="text" id="newCatName" placeholder="${tr("nomCategorie")}" maxlength="30">
+    <div class="swatches">
+      ${SWATCH_COLORS.map((c,i)=>`<div class="swatch ${i===0?'selected':''}" data-color="${c}" style="background:${c}"></div>`).join("")}
+    </div>
+    <div class="cat-form-actions">
+      <button class="btn-primary" id="saveCatBtn">${tr("creer")}</button>
+      <button class="btn-ghost" id="cancelCatBtn">${tr("annuler")}</button>
+    </div>
+  </div>`;
+}
+
+async function renderCategoryDetail(themeId){
+  const theme = (await idbGetAll("themes")).find(t=>t.id===themeId);
+  const {projects, tasks} = await getAllActive();
+  const rawItems = [
+    ...projects.filter(p=>p.themeId===themeId).map(p=>({...p, kind:"project"})),
+    ...tasks.filter(t=>!t.projectId && t.themeId===themeId).map(t=>({...t, kind:"task"}))
+  ];
+  const activeItems = rawItems.filter(i=> i.kind==="project" || i.status !== "done").sort((a,b)=>(a.order||0)-(b.order||0));
+  const doneItems = rawItems.filter(i=> i.kind==="task" && i.status === "done").sort((a,b)=>(b.order||0)-(a.order||0));
+
+  return `
+  <div class="screen-header">
+    <button class="back-btn" id="backBtn">${ICONS.back}</button>
+    <h1 class="screen-title" style="flex:1">${escapeHtml(theme ? themeDisplayName(theme) : "")}</h1>
+    ${theme ? `<button class="icon-btn" id="editCatBtn">${ICONS.pencil}</button>` : ""}
+  </div>
+  <div class="row-title">
+    <h2>${tr("projets")}</h2>
+    <button class="icon-btn" id="addProjectBtn">${ICONS.plus}</button>
+  </div>
+  <div id="itemList">
+    ${activeItems.map(i=>renderItemRow(i)).join("") || `<div class="placeholder-msg">${tr("rienIci")}</div>`}
+  </div>
+  ${renderDoneSection(doneItems, "cat-"+themeId)}`;
+}
+
+function renderItemRow(item){
+  if(item.kind === "project"){
+    return `
+    <div class="item-row" data-item="${item.id}" data-kind="project">
+      <div class="top-row">
+        <div class="p-title">${escapeHtml(item.name)}</div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          ${priorityIcon(item.priority)}
+          <button class="row-edit-btn" data-edit-item="${item.id}" data-edit-kind="project" aria-label="Modifier">${ICONS.pencil}</button>
+        </div>
+      </div>
+      <div class="meta">
+        ${item.deadline ? `<span class="deadline ${daysUntil(item.deadline)<=14 ? 'soon':''}">${formatDeadline(item.deadline)}</span>` : ""}
+        <span class="subcount" data-subcount="${item.id}">…</span>
+      </div>
+    </div>`;
+  }
+  return `
+  <div class="item-row task-row" data-item="${item.id}" data-kind="task">
+    <div class="check-circle ${item.status==='done'?'done':''}" data-checktask="${item.id}">${ICONS.check}</div>
+    <div class="task-name">${escapeHtml(item.name)}</div>
+    ${item.recurrence && item.recurrence !== "aucune" ? `<span class="repeat-icon">${ICONS.repeat}</span>` : ""}
+    ${priorityIcon(item.priority)}
+    ${item.deadline ? `<span class="task-deadline ${daysUntil(item.deadline)<=14?'soon':''}">${formatDeadline(item.deadline)}</span>` : ""}
+    <span class="star ${item.starred?'':'off'}">${ICONS.star}</span>
+    <button class="row-edit-btn" data-edit-item="${item.id}" data-edit-kind="task" aria-label="Modifier">${ICONS.pencil}</button>
+  </div>`;
+}
+
+/* Section "Terminé" repliable, affichée sous une liste de tâches actives */
+function renderDoneSection(doneItems, ctxKey){
+  if(!doneItems.length) return "";
+  return `
+  <div class="done-header" data-donetoggle="${ctxKey}">
+    <span>${tr("terminé", doneItems.length)}</span>
+    <button class="btn-clear" data-cleardone="${ctxKey}">${tr("vider")}</button>
+  </div>
+  <div class="done-list" id="doneList-${ctxKey}">
+    ${doneItems.map(i=>renderItemRow(i)).join("")}
+  </div>`;
+}
+
+async function fillSubcounts(root){
+  root.querySelectorAll("[data-subcount]").forEach(async el=>{
+    const pid = el.dataset.subcount;
+    const subs = await getSubtasks(pid);
+    const done = subs.filter(s=>s.status==="done").length;
+    el.innerHTML = tr("tachesCount", done, subs.length);
+    if(subs.length){
+      el.insertAdjacentHTML("afterend", `<div class="progress-track" style="flex:1;margin-top:0"><div class="progress-fill" style="width:${Math.round(done/subs.length*100)}%"></div></div>`);
+    }
+  });
+}
+
+async function renderProjectDetail(projectId){
+  const project = (await idbGetAll("projects")).find(p=>p.id===projectId);
+  const subtasks = await getSubtasks(projectId);
+  const activeSubs = subtasks.filter(t=>t.status !== "done").map(t=>({...t, kind:"task"}));
+  const doneSubs = subtasks.filter(t=>t.status === "done").map(t=>({...t, kind:"task"}));
+  return `
+  <div class="screen-header">
+    <button class="back-btn" id="backBtn">${ICONS.back}</button>
+    <h1 class="screen-title" style="flex:1">${escapeHtml(project ? project.name : "")}</h1>
+    ${project ? `<button class="icon-btn" id="editProjectBtn">${ICONS.pencil}</button>` : ""}
+  </div>
+  <div class="row-title"><h2>${tr("sousTaches")}</h2></div>
+  <div id="itemList">
+    ${activeSubs.map(t=>renderItemRow(t)).join("") || `<div class="placeholder-msg">${tr("aucuneSousTache")}</div>`}
+  </div>
+  ${renderDoneSection(doneSubs, "proj-"+projectId)}`;
+}
+
+/* =========================================================================
+   RENDER — Plages de temps
+   ========================================================================= */
+const HOUR_ROW_PX = 64;
+const DAY_LABELS = ["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"];
+function dayLabelsShort(){ return dayLabelsFull().map(n=>n.slice(0,3)); }
+
+function renderDayButtons(weekDates, selectedDate, todayISO){
+  return weekDates.map(d=>{
+    const iso = toISODate(d);
+    const cls = ["day-btn"];
+    if(iso === selectedDate) cls.push("selected");
+    if(iso === todayISO) cls.push("today");
+    return `<button class="${cls.join(" ")}" data-date="${iso}">
+      <span class="day-btn-label">${dayLabelsShort()[d.getDay()]}</span>
+      <span class="day-btn-num">${d.getDate()}</span>
+    </button>`;
+  }).join("");
+}
+
+async function renderDayGrid(selectedDate){
+  const [allSlots, themes] = await Promise.all([idbGetAll("timeslots"), idbGetAll("themes")]);
+  const themeMap = Object.fromEntries(themes.map(t=>[t.id, t]));
+  const daySlots = allSlots.filter(s=>s.date === selectedDate);
+
+  let rows = "";
+  for(let h=0; h<24; h++){
+    rows += `<div class="hour-row" data-hour="${h}" style="top:${h*HOUR_ROW_PX}px;height:${HOUR_ROW_PX}px">
+      <span class="hour-label">${String(h).padStart(2,"0")}:00</span>
+    </div>`;
+  }
+  // Ligne de fin purement visuelle à minuit, pour montrer qu'une plage peut aller jusqu'au bout de la journée
+  rows += `<div class="hour-row-end" style="top:${24*HOUR_ROW_PX}px"><span class="hour-label">00:00</span></div>`;
+
+  // Ligne indiquant l'heure actuelle, seulement si le jour affiché est aujourd'hui
+  if(selectedDate === toISODate(new Date())){
+    const now = new Date();
+    const nowTop = (now.getHours()*60 + now.getMinutes()) * (HOUR_ROW_PX/60);
+    rows += `<div class="now-line" style="top:${nowTop}px"><span class="now-dot"></span></div>`;
+  }
+
+  const blocks = daySlots.map(s=>{
+    const theme = themeMap[s.themeId];
+    const top = slotStartMinutes(s.start) * (HOUR_ROW_PX/60);
+    const height = Math.max((slotEndMinutes(s.end) - slotStartMinutes(s.start)) * (HOUR_ROW_PX/60), 24);
+    return `<div class="slot-block" data-slot="${s.id}" style="top:${top}px;height:${height}px;background:${theme?theme.color:'#8A8F80'}">
+      <span class="slot-cat">${theme?escapeHtml(themeDisplayName(theme)):"?"}</span>
+      ${s.note ? `<span class="slot-note">${escapeHtml(s.note)}</span>` : ""}
+      <span class="slot-time">${s.start}–${s.end}</span>
+    </div>`;
+  }).join("");
+
+  return `<div class="day-grid" style="height:${24*HOUR_ROW_PX + 20}px">${rows}${blocks}</div>`;
+}
+
+async function renderPlages(){
+  const settings = Object.fromEntries((await idbGetAll("settings")).map(s=>[s.key,s.value]));
+  const weekStartDay = settings.weekStart ?? 1;
+  const todayISO = toISODate(new Date());
+  if(!state.plagesSelectedDate) state.plagesSelectedDate = todayISO;
+
+  const weekDates = getWeekDates(state.plagesWeekOffset, weekStartDay);
+  const weekISOs = weekDates.map(toISODate);
+  const allSlots = await idbGetAll("timeslots");
+  const weekHasSlots = allSlots.some(s=>weekISOs.includes(s.date));
+  const prevWeekISOs = getWeekDates(state.plagesWeekOffset-1, weekStartDay).map(toISODate);
+  const prevWeekHasSlots = allSlots.some(s=>prevWeekISOs.includes(s.date));
+
+  let html = `
+  <div class="screen-header">
+    <h1 class="screen-title" style="flex:1">${tr("plagesDeTemps")}</h1>
+    <button class="icon-btn" id="addSlotBtn">${ICONS.plus}</button>
+  </div>
+  <div class="week-nav">
+    <button class="week-arrow" id="weekPrev" aria-label="Semaine précédente">${ICONS.back}</button>
+    <div class="week-label">${formatWeekLabel(weekDates[0], weekDates[6])}</div>
+    <button class="week-arrow" id="weekNext" aria-label="Semaine suivante">${ICONS.chevRight}</button>
+  </div>
+  <div class="day-btn-row">${renderDayButtons(weekDates, state.plagesSelectedDate, todayISO)}</div>`;
+
+  if(!weekHasSlots && prevWeekHasSlots){
+    html += `
+    <div class="copy-week-banner">
+      <span>${tr("reprendreSemaine")}</span>
+      <button class="btn-choose" id="copyWeekBtn">${tr("copier")}</button>
+    </div>`;
+  }
+
+  html += `<div class="day-grid-wrap">${await renderDayGrid(state.plagesSelectedDate)}</div>`;
+  return html;
+}
+
+function shiftSelectedDate(deltaDays){
+  const d = parseISODate(state.plagesSelectedDate);
+  d.setDate(d.getDate() + deltaDays);
+  state.plagesSelectedDate = toISODate(d);
+}
+
+async function copyPreviousWeekSlots(){
+  const settings = Object.fromEntries((await idbGetAll("settings")).map(s=>[s.key,s.value]));
+  const weekStartDay = settings.weekStart ?? 1;
+  const curWeek = getWeekDates(state.plagesWeekOffset, weekStartDay).map(toISODate);
+  const prevWeek = getWeekDates(state.plagesWeekOffset-1, weekStartDay).map(toISODate);
+  const allSlots = await idbGetAll("timeslots");
+  for(let i=0;i<7;i++){
+    const daySlots = allSlots.filter(s=>s.date === prevWeek[i]);
+    for(const s of daySlots){
+      await idbPut("timeslots", {id:uid(), date:curWeek[i], start:s.start, end:s.end, themeId:s.themeId});
+    }
+  }
+}
+
+/* ---- Modale plage horaire ---- */
+let slotModalContext = {};
+
+function slotFormHtml(existing, defaultStart, defaultEnd, themesList){
+  return `
+  <h3>${existing ? tr("modifierPlage") : tr("ajouterPlage")}</h3>
+  <div class="field-row">
+    <div><label>${tr("debut")}</label></div>
+    <div><label>${tr("fin")}</label></div>
+  </div>
+  <div class="field-row">
+    <div><input type="time" id="mSlotStart" step="900" value="${defaultStart}"></div>
+    <div><input type="time" id="mSlotEnd" step="900" value="${defaultEnd}"></div>
+  </div>
+  <label>${tr("categorie")}</label>
+  <select id="mSlotTheme">
+    ${themesList.map(t=>`<option value="${t.id}">${escapeHtml(themeDisplayName(t))}</option>`).join("")}
+  </select>
+  <button type="button" class="link-add-cat" id="slotAddCatBtn">${tr("ajouterNouvelleCategorie")}</button>
+  <div id="slotNewCatForm"></div>
+  <label>${tr("description")}</label>
+  <input type="text" id="mSlotNote" placeholder="${tr("exSlotNote")}" maxlength="60" value="${existing && existing.note ? escapeHtml(existing.note) : ""}">
+  <div class="field-error" id="slotError"></div>
+  <div class="modal-actions">
+    <button class="btn-primary" id="mSlotSave">${tr("enregistrer")}</button>
+    ${existing ? `<button class="btn-delete" id="mSlotDelete">${tr("supprimer")}</button>` : ""}
+    <button class="btn-ghost" id="mSlotCancel">${tr("annuler")}</button>
+  </div>`;
+}
+
+async function openSlotModal(existing, date, hour){
+  const themes = (await idbGetAll("themes")).filter(t=>(t.forProjects || t.forSlots) && !t.isDefault).sort((a,b)=>(a.order||0)-(b.order||0));
+  const defaultStart = existing ? existing.start : (hour != null ? `${String(hour).padStart(2,"0")}:00` : "09:00");
+  const defaultEnd = existing ? existing.end : (hour != null ? (hour===23 ? "00:00" : `${String(hour+1).padStart(2,"0")}:00`) : "10:00");
+  slotModalContext = {existing, date: existing ? existing.date : date};
+
+  openModal(slotFormHtml(existing, defaultStart, defaultEnd, themes));
+  const themeSelect = document.getElementById("mSlotTheme");
+  themeSelect.value = existing ? existing.themeId : (themes[0] ? themes[0].id : "");
+
+  document.getElementById("mSlotCancel").addEventListener("click", closeModal);
+  document.getElementById("mSlotSave").addEventListener("click", saveSlotModal);
+  document.getElementById("slotAddCatBtn").addEventListener("click", ()=>{
+    document.getElementById("slotNewCatForm").innerHTML = slotNewCatFormHtml();
+    attachSlotNewCatEvents();
+  });
+  const delBtn = document.getElementById("mSlotDelete");
+  if(delBtn){
+    attachTwoStepDelete(delBtn, async ()=>{
+      await idbDelete("timeslots", existing.id);
+      state.currentSlotThemeOverride = null;
+      state.currentItemOverride = null;
+      closeModal();
+      renderStack();
+    });
+  }
+}
+
+function showSlotError(msg){
+  const el = document.getElementById("slotError");
+  el.textContent = msg;
+  el.classList.add("show");
+}
+
+async function saveSlotModal(){
+  const start = document.getElementById("mSlotStart").value;
+  const end = document.getElementById("mSlotEnd").value;
+  const themeId = document.getElementById("mSlotTheme").value;
+  const note = document.getElementById("mSlotNote").value.trim();
+  if(!start || !end || !themeId) return;
+
+  const startM = slotStartMinutes(start);
+  const endM = slotEndMinutes(end);
+  if(endM <= startM){
+    showSlotError("L'heure de fin doit être après l'heure de début.");
+    return;
+  }
+
+  const {existing, date} = slotModalContext;
+  const allSlots = await idbGetAll("timeslots");
+  // Les autres plages du même jour (on exclut la plage en cours d'édition)
+  const daySlots = allSlots.filter(s => s.date === date && (!existing || s.id !== existing.id));
+
+  // Chevauchement strict : se toucher pile (fin = début) est autorisé, se recouvrir ne l'est pas.
+  const conflict = daySlots.find(s => startM < slotEndMinutes(s.end) && endM > slotStartMinutes(s.start));
+
+  if(conflict){
+    const conflictEndM = slotEndMinutes(conflict.end);
+    // Si repousser le début de la nouvelle plage à la fin de celle qui bloque suffit à régler le problème, on le fait
+    if(conflictEndM < endM){
+      const stillConflict = daySlots.some(s => s !== conflict && conflictEndM < slotEndMinutes(s.end) && endM > slotStartMinutes(s.start));
+      if(!stillConflict){
+        document.getElementById("mSlotStart").value = conflict.end;
+        showSlotError(`Cette plage chevauchait ${conflict.start}–${conflict.end} : le début a été ajusté à ${conflict.end}. Vérifie et enregistre à nouveau.`);
+        return;
+      }
+    }
+    showSlotError(`Cette plage chevauche une plage existante (${conflict.start}–${conflict.end}).`);
+    return;
+  }
+
+  const obj = existing ? {...existing} : {id: uid(), date};
+  obj.start = start; obj.end = end; obj.themeId = themeId; obj.note = note;
+  await idbPut("timeslots", obj);
+  // Une plage vient d'être modifiée : on efface les bascules manuelles du Dashboard pour qu'il
+  // retrouve la vraie plage/catégorie actuelle au lieu de rester bloqué sur un ancien choix.
+  state.currentSlotThemeOverride = null;
+  state.currentItemOverride = null;
+  closeModal();
+  renderStack();
+}
+
+/* Petit formulaire imbriqué pour créer une catégorie réservée aux plages (pas visible dans Projets) */
+function slotNewCatFormHtml(){
+  return `
+  <div class="cat-form" style="margin:-4px 0 12px;">
+    <input type="text" id="slotNewCatName" placeholder="${tr("nomCategorie")}" maxlength="30">
+    <div class="swatches" id="slotNewCatSwatches">
+      ${SWATCH_COLORS.map((c,i)=>`<div class="swatch ${i===0?'selected':''}" data-color="${c}" style="background:${c}"></div>`).join("")}
+    </div>
+    <div class="cat-form-actions">
+      <button type="button" class="btn-primary" id="slotNewCatSave">${tr("creer")}</button>
+      <button type="button" class="btn-ghost" id="slotNewCatCancel">${tr("annuler")}</button>
+    </div>
+  </div>`;
+}
+
+function attachSlotNewCatEvents(){
+  let selectedColor = SWATCH_COLORS[0];
+  document.querySelectorAll("#slotNewCatSwatches .swatch").forEach(sw=>{
+    sw.addEventListener("click", ()=>{
+      document.querySelectorAll("#slotNewCatSwatches .swatch").forEach(s=>s.classList.remove("selected"));
+      sw.classList.add("selected");
+      selectedColor = sw.dataset.color;
+    });
+  });
+  document.getElementById("slotNewCatCancel").addEventListener("click", ()=>{
+    document.getElementById("slotNewCatForm").innerHTML = "";
+  });
+  document.getElementById("slotNewCatSave").addEventListener("click", async ()=>{
+    const name = document.getElementById("slotNewCatName").value.trim();
+    if(!name) return;
+    const themes = await idbGetAll("themes");
+    const theme = {id: uid(), name, color: selectedColor, forProjects:false, forSlots:true, isDefault:false, order: themes.length};
+    await idbPut("themes", theme);
+    const select = document.getElementById("mSlotTheme");
+    const opt = document.createElement("option");
+    opt.value = theme.id; opt.textContent = theme.name;
+    select.appendChild(opt);
+    select.value = theme.id;
+    document.getElementById("slotNewCatForm").innerHTML = "";
+  });
+}
+
+/* =========================================================================
+   RENDER — Habitudes
+   ========================================================================= */
+const DAY_LETTER = ["D","L","M","M","J","V","S"]; // dim, lun, mar, mer, jeu, ven, sam
+
+function currentMomentOfDay(){
+  const h = new Date().getHours();
+  if(h < 12) return "matin";
+  if(h < 18) return "apres-midi";
+  return "soir";
+}
+
+function computeDailyStreak(habit, todayISO){
+  const completions = habit.completions || {};
+  let streak = 0;
+  let cursor = parseISODate(todayISO);
+  if(!completions[todayISO]) cursor.setDate(cursor.getDate()-1);
+  while(completions[toISODate(cursor)]){
+    streak++;
+    cursor.setDate(cursor.getDate()-1);
+  }
+  return streak;
+}
+
+function computeWeeklyStreak(habit, weekStartDay){
+  const completions = habit.completions || {};
+  const n = habit.timesPerWeek || 1;
+  function weekCount(offset){
+    return getWeekDates(offset, weekStartDay).map(toISODate).filter(d=>completions[d]).length;
+  }
+  let streak = 0, offset = 0;
+  if(weekCount(0) < n) offset = -1;
+  while(weekCount(offset) >= n){ streak++; offset--; }
+  return streak;
+}
+
+/* Score hebdo sur 3 : (accompli / attendu) × 3, arrondi. "Attendu" ne compte que les jours
+   déjà écoulés de la semaine pour les habitudes quotidiennes, pour ne pas pénaliser trop tôt. */
+async function computeWeekScoreForDates(weekDatesISOs){
+  const habits = await idbGetAll("habits");
+  const todayISO = toISODate(new Date());
+  let expected = 0, done = 0;
+  for(const h of habits){
+    const completions = h.completions || {};
+    if(h.frequency === "hebdomadaire"){
+      const n = h.timesPerWeek || 1;
+      expected += n;
+      done += Math.min(weekDatesISOs.filter(d=>completions[d]).length, n);
+    } else {
+      const relevantDays = weekDatesISOs.filter(d => d <= todayISO);
+      expected += relevantDays.length;
+      done += relevantDays.filter(d => completions[d]).length;
+    }
+  }
+  if(expected === 0) return 0;
+  return Math.max(0, Math.min(3, Math.round((done/expected)*3)));
+}
+
+/* Une habitude est "faite maintenant" si aujourd'hui est rempli (quotidienne) ou si l'objectif
+   de la semaine est atteint (hebdomadaire) — un jour "skip" compte comme fait. */
+function isHabitDoneNow(h, todayISO, weekDatesISOs){
+  const completions = h.completions || {};
+  if(h.frequency === "hebdomadaire"){
+    const n = h.timesPerWeek || 1;
+    return weekDatesISOs.filter(d=>completions[d]).length >= n;
+  }
+  return !!completions[todayISO];
+}
+
+function renderHabitCard(h, todayISO, weekDatesISOs, weekStartDay, allowSkip){
+  const completions = h.completions || {};
+  const checkedToday = !!completions[todayISO];
+  const doneNow = isHabitDoneNow(h, todayISO, weekDatesISOs);
+  let circlesHtml, streakLabel;
+
+  if(h.frequency === "hebdomadaire"){
+    const n = h.timesPerWeek || 1;
+    const count = weekDatesISOs.filter(d=>completions[d]).length;
+    circlesHtml = Array.from({length:n}).map((_,i)=>{
+      const idx = i+1;
+      const isFilled = idx <= count;
+      const isSkip = isFilled && completions[weekDatesISOs[idx-1]] === "skip";
+      const prevFilled = i>0 && i <= count;
+      const cls = ["day-circle"];
+      if(isFilled) cls.push(isSkip ? "skipped" : "done");
+      if(isFilled && prevFilled) cls.push("connected");
+      return `<div class="${cls.join(' ')}"><span>${idx}</span></div>`;
+    }).join("");
+    const streak = computeWeeklyStreak(h, weekStartDay);
+    streakLabel = tr("semainesAffilee", streak);
+  } else {
+    circlesHtml = weekDatesISOs.map((iso,i)=>{
+      const d = parseISODate(iso);
+      const val = completions[iso];
+      const isFilled = !!val;
+      const isToday = iso === todayISO;
+      const prevFilled = i>0 && !!completions[weekDatesISOs[i-1]];
+      const cls = ["day-circle"];
+      if(isFilled) cls.push(val === "skip" ? "skipped" : "done");
+      if(isToday) cls.push("today");
+      if(isFilled && prevFilled) cls.push("connected");
+      return `<div class="${cls.join(' ')}"><span>${DAY_LETTER[d.getDay()]}</span></div>`;
+    }).join("");
+    const streak = computeDailyStreak(h, todayISO);
+    streakLabel = tr("joursAffilee", streak);
+  }
+
+  const descKey = {faible:"descFaible", normale:"descNormale", elevee:"descElevee"}[state.habitsEnergyLevel] || "descNormale";
+  const desc = h[descKey] || "";
+  const skipUsedThisWeek = weekDatesISOs.some(d=>completions[d] === "skip");
+
+  return `
+  <div class="habit-card ${doneNow?'done':''}" data-habit="${h.id}">
+    <div class="habit-top">
+      <div class="check-circle ${checkedToday?'done':''}" data-checkhabit="${h.id}">${ICONS.check}</div>
+      <div class="habit-title">${escapeHtml(h.name)}</div>
+      ${allowSkip && !checkedToday ? `<button class="skip-btn ${skipUsedThisWeek?'disabled':''}" data-skip-habit="${h.id}">${tr("passer")}</button>` : ""}
+      <button class="row-edit-btn" data-edit-habit="${h.id}" aria-label="Modifier">${ICONS.pencil}</button>
+    </div>
+    ${desc ? `<p class="habit-desc">${escapeHtml(desc)}</p>` : ""}
+    <div class="habit-days-row">${circlesHtml}</div>
+    <div class="habit-streak">${streakLabel}</div>
+  </div>`;
+}
+
+async function renderHabitudes(){
+  const settings = Object.fromEntries((await idbGetAll("settings")).map(s=>[s.key,s.value]));
+  const weekStartDay = settings.weekStart ?? 1;
+  const allowSkip = !!settings.allowHabitSkip;
+  const habits = await idbGetAll("habits");
+  const todayISO = toISODate(new Date());
+  const weekDatesISOs = getWeekDates(0, weekStartDay).map(toISODate);
+
+  if(!state.habitsMomentFilter) state.habitsMomentFilter = currentMomentOfDay();
+  if(!state.habitsEnergyLevel) state.habitsEnergyLevel = "normale";
+
+  const score = await computeWeekScoreForDates(weekDatesISOs);
+  const scoreTier = score===1?"bronze":score===2?"silver":score===3?"gold":"";
+
+  const filtered = habits.filter(h=>{
+    if(state.habitsMomentFilter === "toutes") return true;
+    if(h.frequency === "hebdomadaire") return true;
+    if(h.momentDuJour === "toute-journee") return true;
+    return h.momentDuJour === state.habitsMomentFilter;
+  }).sort((a,b)=>{
+    // Les habitudes déjà faites passent en dessous des non-faites
+    const da = isHabitDoneNow(a, todayISO, weekDatesISOs) ? 1 : 0;
+    const db = isHabitDoneNow(b, todayISO, weekDatesISOs) ? 1 : 0;
+    if(da !== db) return da - db;
+    return (a.order||0) - (b.order||0);
+  });
+
+  const rows = filtered.map(h=>renderHabitCard(h, todayISO, weekDatesISOs, weekStartDay, allowSkip)).join("")
+    || `<div class="placeholder-msg">${tr("aucuneHabitude")}</div>`;
+
+  return `
+  <div class="screen-header">
+    <h1 class="screen-title" style="flex:1">${tr("habitudes")}</h1>
+    <button class="icon-btn" id="addHabitBtn">${ICONS.plus}</button>
+  </div>
+  <div class="habit-score-row">
+    <span class="habit-score-label">${tr("score")}</span>
+    <div class="habit-medals">
+      ${[1,2,3].map(n=>`<span class="medal ${n<=score?'filled tier-'+scoreTier:''}"></span>`).join("")}
+    </div>
+  </div>
+  <div class="habit-filters-row">
+    <select id="momentFilter">
+      <option value="matin" ${state.habitsMomentFilter==='matin'?'selected':''}>${tr("matin")}</option>
+      <option value="apres-midi" ${state.habitsMomentFilter==='apres-midi'?'selected':''}>${tr("apresMidi")}</option>
+      <option value="soir" ${state.habitsMomentFilter==='soir'?'selected':''}>${tr("soir")}</option>
+      <option value="toutes" ${state.habitsMomentFilter==='toutes'?'selected':''}>${tr("toutesLesHabitudes")}</option>
+    </select>
+    <select id="energyFilter">
+      <option value="faible" ${state.habitsEnergyLevel==='faible'?'selected':''}>${tr("energieFaible")}</option>
+      <option value="normale" ${state.habitsEnergyLevel==='normale'?'selected':''}>${tr("energieNormale")}</option>
+      <option value="elevee" ${state.habitsEnergyLevel==='elevee'?'selected':''}>${tr("energieElevee")}</option>
+    </select>
+  </div>
+  <div id="habitsList">${rows}</div>`;
+}
+
+/* ---- Modale habitude ---- */
+let habitModalContext = null;
+
+function habitFormHtml(existing){
+  return `
+  <h3>${existing ? tr("modifierHabitude") : tr("ajouterHabitude")}</h3>
+  <input type="text" id="hName" placeholder="${tr("nomHabitude")}" value="${existing?escapeHtml(existing.name):""}">
+  <label>${tr("frequence")}</label>
+  <select id="hFrequency">
+    <option value="quotidienne">${tr("tousLesJours")}</option>
+    <option value="hebdomadaire">${tr("xFoisParSemaine")}</option>
+  </select>
+  <div id="hTimesWrap">
+    <label>${tr("combienFois")}</label>
+    <select id="hTimesPerWeek">
+      ${[1,2,3,4,5,6,7].map(n=>`<option value="${n}">${n}</option>`).join("")}
+    </select>
+  </div>
+  <label>${tr("momentJournee")}</label>
+  <select id="hMoment">
+    <option value="toute-journee">${tr("touteLaJournee")}</option>
+    <option value="matin">${tr("matin")}</option>
+    <option value="apres-midi">${tr("apresMidi")}</option>
+    <option value="soir">${tr("soir")}</option>
+  </select>
+  <label>${tr("descFaibleLabel")}</label>
+  <input type="text" id="hDescFaible" placeholder="${tr("exDescFaible")}" value="${existing?escapeHtml(existing.descFaible||""):""}">
+  <label>${tr("descNormaleLabel")}</label>
+  <input type="text" id="hDescNormale" placeholder="${tr("exDescNormale")}" value="${existing?escapeHtml(existing.descNormale||""):""}">
+  <label>${tr("descEleveeLabel")}</label>
+  <input type="text" id="hDescElevee" placeholder="${tr("exDescElevee")}" value="${existing?escapeHtml(existing.descElevee||""):""}">
+  <div class="modal-actions">
+    <button class="btn-primary" id="hSave">${tr("enregistrer")}</button>
+    ${existing ? `<button class="btn-delete" id="hDelete">${tr("supprimer")}</button>` : ""}
+    <button class="btn-ghost" id="hCancel">${tr("annuler")}</button>
+  </div>`;
+}
+
+function openHabitModal(existing){
+  habitModalContext = {existing};
+  openModal(habitFormHtml(existing));
+
+  const freqSelect = document.getElementById("hFrequency");
+  const timesWrap = document.getElementById("hTimesWrap");
+  freqSelect.value = existing ? existing.frequency : "quotidienne";
+  document.getElementById("hTimesPerWeek").value = existing ? (existing.timesPerWeek || 3) : 3;
+  document.getElementById("hMoment").value = existing ? existing.momentDuJour : "toute-journee";
+  timesWrap.style.display = freqSelect.value === "hebdomadaire" ? "block" : "none";
+  freqSelect.addEventListener("change", ()=>{
+    timesWrap.style.display = freqSelect.value === "hebdomadaire" ? "block" : "none";
+  });
+
+  document.getElementById("hCancel").addEventListener("click", closeModal);
+  document.getElementById("hSave").addEventListener("click", saveHabitModal);
+  const delBtn = document.getElementById("hDelete");
+  if(delBtn){
+    attachTwoStepDelete(delBtn, async ()=>{
+      await idbDelete("habits", existing.id);
+      closeModal();
+      renderStack();
+    });
+  }
+}
+
+async function saveHabitModal(){
+  const name = document.getElementById("hName").value.trim();
+  if(!name) return;
+  const frequency = document.getElementById("hFrequency").value;
+  const timesPerWeek = parseInt(document.getElementById("hTimesPerWeek").value, 10);
+  const momentDuJour = document.getElementById("hMoment").value;
+  const descFaible = document.getElementById("hDescFaible").value.trim();
+  const descNormale = document.getElementById("hDescNormale").value.trim();
+  const descElevee = document.getElementById("hDescElevee").value.trim();
+
+  const {existing} = habitModalContext;
+  const obj = existing ? {...existing} : {id: uid(), completions:{}, order: Date.now()};
+  obj.name = name; obj.frequency = frequency; obj.timesPerWeek = timesPerWeek;
+  obj.momentDuJour = momentDuJour; obj.descFaible = descFaible; obj.descNormale = descNormale; obj.descElevee = descElevee;
+  await idbPut("habits", obj);
+  closeModal();
+  renderStack();
+}
+
+/* ---- Pop-up de récap hebdomadaire (nouvelle semaine) ---- */
+function weekRecapMessage(score){
+  if(score >= 3) return {tier:"gold", title:tr("semaineOr"), msg:tr("msgOr")};
+  if(score === 2) return {tier:"silver", title:tr("semaineArgent"), msg:tr("msgArgent")};
+  if(score === 1) return {tier:"bronze", title:tr("semaineBronze"), msg:tr("msgBronze")};
+  return {tier:"", title:tr("nouvelleSemaine"), msg:tr("msgNeutre")};
+}
+
+function showWeekRecapModal(score){
+  const {tier, title, msg} = weekRecapMessage(score);
+  openModal(`
+    <h3 style="text-align:center;">${title}</h3>
+    <div class="week-recap-medal ${tier?`medal filled tier-${tier}`:''}" style="width:64px;height:64px;"></div>
+    <p style="text-align:center; font-size:14px; color:var(--text); margin-bottom:18px;">${msg}</p>
+    <div class="modal-actions" style="justify-content:center;">
+      <button class="btn-primary" id="recapClose">${tr("fermer")}</button>
+    </div>
+  `);
+  document.getElementById("recapClose").addEventListener("click", closeModal);
+}
+
+async function checkWeekRollover(){
+  const settings = Object.fromEntries((await idbGetAll("settings")).map(s=>[s.key,s.value]));
+  const weekStartDay = settings.weekStart ?? 1;
+  const curWeekStartISO = toISODate(startOfWeekContaining(new Date(), weekStartDay));
+  const last = settings.lastSeenWeekStart;
+  if(last && last !== curWeekStartISO){
+    const prevWeekDates = [];
+    let d = parseISODate(last);
+    for(let i=0;i<7;i++){ prevWeekDates.push(toISODate(d)); d.setDate(d.getDate()+1); }
+    const score = await computeWeekScoreForDates(prevWeekDates);
+    showWeekRecapModal(score);
+  }
+  await idbPut("settings", {key:"lastSeenWeekStart", value: curWeekStartISO});
+}
+
+/* =========================================================================
+   RENDER — Réglages
+   ========================================================================= */
+function dayLabelsFull(){
+  return [tr("dimanche"),tr("lundi"),tr("mardi"),tr("mercredi"),tr("jeudi"),tr("vendredi"),tr("samedi")];
+}
+
+const THEME_BG = {light:"#EFF1EA", dark:"#1C211A", cream:"#F6EFE1"};
+function applyTheme(themeName){
+  const name = themeName || "light";
+  document.body.className = "theme-" + name;
+  const meta = document.getElementById("themeColorMeta");
+  if(meta) meta.setAttribute("content", THEME_BG[name] || THEME_BG.light);
+}
+
+const DATA_STORES = ["themes","projects","tasks","timeslots","habits","settings"];
+
+async function exportAllData(){
+  const data = {};
+  for(const store of DATA_STORES) data[store] = await idbGetAll(store);
+  const payload = {app:"Beeziday", exportedAt: new Date().toISOString(), version:1, data};
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `beeziday-export-${toISODate(new Date())}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function restoreAllData(payload){
+  for(const store of DATA_STORES){
+    await idbClear(store);
+    const records = Array.isArray(payload.data[store]) ? payload.data[store] : [];
+    for(const record of records) await idbPut(store, record);
+  }
+}
+
+async function renderReglages(){
+  const settings = Object.fromEntries((await idbGetAll("settings")).map(s=>[s.key,s.value]));
+  return `
+  <div class="screen-header"><h1 class="screen-title">${tr("reglages")}</h1></div>
+  <p class="data-warning">${tr("dataWarning")}</p>
+
+  <div class="settings-group">
+    <label class="settings-label">${tr("prenom")}</label>
+    <input type="text" id="rName" placeholder="${tr("tonPrenom")}" value="${escapeHtml(settings.userName||"")}">
+  </div>
+
+  <div class="settings-group">
+    <label class="settings-label">${tr("langue")}</label>
+    <select id="rLanguage">
+      <option value="fr" ${(!settings.language||settings.language==='fr')?'selected':''}>${tr("francais")}</option>
+      <option value="en" ${settings.language==='en'?'selected':''}>${tr("anglais")}</option>
+    </select>
+  </div>
+
+  <div class="settings-group">
+    <label class="settings-label">${tr("premierJourSemaine")}</label>
+    <select id="rWeekStart">
+      ${dayLabelsFull().map((name,i)=>`<option value="${i}" ${((settings.weekStart??1)===i)?'selected':''}>${name}</option>`).join("")}
+    </select>
+  </div>
+
+  <div class="settings-group">
+    <label class="settings-label">${tr("theme")}</label>
+    <select id="rTheme">
+      <option value="light" ${(!settings.appTheme||settings.appTheme==='light')?'selected':''}>${tr("clair")}</option>
+      <option value="dark" ${settings.appTheme==='dark'?'selected':''}>${tr("sombre")}</option>
+      <option value="cream" ${settings.appTheme==='cream'?'selected':''}>${tr("creme")}</option>
+    </select>
+  </div>
+
+  <div class="settings-group">
+    <label class="checkbox-row" style="margin-bottom:4px;">
+      <input type="checkbox" id="rAllowSkip" ${settings.allowHabitSkip?'checked':''}>
+      ${tr("autoriserSkip")}
+    </label>
+    <p class="settings-note">${tr("skipNote")}</p>
+  </div>
+
+  <div class="settings-group">
+    <label class="settings-label">${tr("exportTitle")}</label>
+    <button class="btn-choose" id="exportDataBtn" style="display:block;width:100%;margin-bottom:10px;">${tr("exporterMesDonnees")}</button>
+    <button class="btn-ghost" id="importDataBtn" style="display:block;width:100%;">${tr("importerMesDonnees")}</button>
+    <input type="file" id="importFileInput" accept="application/json" style="display:none;">
+  </div>`;
+}
+
+/* =========================================================================
+   EVENTS per screen
+   Toutes les requêtes sont scopées à "root" (l'écran fraîchement rendu) et
+   non à document, car pendant une transition push/pop l'ancien écran reste
+   brièvement dans le DOM avec les mêmes ids (backBtn, itemList...).
+   Interroger document.getElementById risquerait d'attraper le mauvais élément.
+   ========================================================================= */
+function attachScreenEvents(screenName, root){
+  if(screenName === "dashboard"){
+    const chooseBtn = root.querySelector("#chooseCatBtn");
+    if(chooseBtn) chooseBtn.addEventListener("click", openThemePickerModal);
+
+    const planBtn = root.querySelector("#planSlotBtn");
+    if(planBtn) planBtn.addEventListener("click", ()=>{
+      state.stack = [{screen:"plages"}];
+      renderStack();
+    });
+
+    const sel = root.querySelector("#slotThemeSelect");
+    if(sel) sel.addEventListener("change", (e)=>{
+      state.currentSlotThemeOverride = e.target.value;
+      state.currentItemOverride = null;
+      renderStack();
+    });
+
+    const showAll = root.querySelector("#showAllTasksLink");
+    if(showAll) showAll.addEventListener("click", ()=>{
+      state.stack = [{screen:"cats"}, {screen:"projectDetail", projectId: showAll.dataset.project}];
+      state.projetsStackMemory = [...state.stack];
+      renderStack();
+    });
+
+    const skipBtn = root.querySelector("#skipNextBtn");
+    if(skipBtn) skipBtn.addEventListener("click", async ()=>{
+      const itemKind = skipBtn.dataset.itemKind;
+      const currentId = skipBtn.dataset.currentId;
+      const nextId = skipBtn.dataset.nextId;
+      if(itemKind === "project"){
+        // Les deux sont des sous-tâches du même projet : on échange simplement leur ordre
+        const tasks = await idbGetAll("tasks");
+        const cur = tasks.find(t=>t.id===currentId);
+        const nxt = tasks.find(t=>t.id===nextId);
+        if(cur && nxt){
+          const tmp = cur.order;
+          cur.order = nxt.order;
+          nxt.order = tmp;
+          await idbPut("tasks", cur);
+          await idbPut("tasks", nxt);
+        }
+      } else {
+        // La tâche en cours est une tâche seule : on force juste l'affichage sur le suivant,
+        // la tâche en cours redeviendra naturellement "prochaine tâche" au prochain calcul.
+        state.currentItemOverride = nextId;
+      }
+      renderStack();
+    });
+
+    root.querySelectorAll("[data-checktask]").forEach(el=>{
+      el.addEventListener("click", async ()=>{
+        const id = el.dataset.checktask;
+        const task = (await idbGetAll("tasks")).find(t=>t.id===id);
+        if(task){ task.status = task.status==="done" ? "todo" : "done"; await idbPut("tasks", task); renderStack(); }
+      });
+    });
+
+    root.querySelectorAll("[data-switch-theme]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        state.currentSlotThemeOverride = btn.dataset.switchTheme;
+        state.currentItemOverride = btn.dataset.switchItem || null;
+        renderStack();
+      });
+    });
+  }
+
+  if(screenName === "cats"){
+    root.querySelector("#addCatBtn").addEventListener("click", ()=>{
+      const holder = root.querySelector("#catFormHolder");
+      holder.innerHTML = catFormHtml();
+      attachCatFormEvents(root);
+    });
+    root.querySelectorAll(".cat-row").forEach(row=>{
+      row.addEventListener("click", (e)=>{
+        if(row.classList.contains("dragging")) return;
+        pushScreen({screen:"catDetail", themeId: row.dataset.cat});
+      });
+    });
+    root.querySelectorAll("[data-edit-cat]").forEach(btn=>{
+      btn.addEventListener("click", async (e)=>{
+        e.stopPropagation();
+        const theme = (await idbGetAll("themes")).find(t=>t.id===btn.dataset.editCat);
+        if(theme) openCatEditModal(theme);
+      });
+    });
+    makeDraggable(root, "#catList", ".cat-row", "themes");
+  }
+
+  if(screenName === "catDetail"){
+    root.querySelector("#backBtn").addEventListener("click", popScreen);
+    root.querySelector("#addProjectBtn").addEventListener("click", ()=>{
+      const themeId = state.stack[state.stack.length-1].themeId;
+      openItemModal("project", null, {themeId});
+    });
+    const editCatBtn = root.querySelector("#editCatBtn");
+    if(editCatBtn) editCatBtn.addEventListener("click", async ()=>{
+      const themeId = state.stack[state.stack.length-1].themeId;
+      const theme = (await idbGetAll("themes")).find(t=>t.id===themeId);
+      if(theme) openCatEditModal(theme);
+    });
+    attachItemRowEvents(root);
+    attachDoneSectionEvents(root);
+    fillSubcounts(root);
+    makeDraggable(root, "#itemList", ".item-row", "mixed");
+  }
+
+  if(screenName === "projectDetail"){
+    root.querySelector("#backBtn").addEventListener("click", popScreen);
+    const editProjectBtn = root.querySelector("#editProjectBtn");
+    if(editProjectBtn) editProjectBtn.addEventListener("click", async ()=>{
+      const projectId = state.stack[state.stack.length-1].projectId;
+      const project = (await idbGetAll("projects")).find(p=>p.id===projectId);
+      if(project) openItemModal("project", project, {});
+    });
+    attachItemRowEvents(root);
+    attachDoneSectionEvents(root);
+    makeDraggable(root, "#itemList", ".item-row", "tasks");
+  }
+
+  if(screenName === "plages"){
+    root.querySelector("#addSlotBtn").addEventListener("click", ()=>{
+      const now = new Date();
+      const h = now.getMinutes() > 30 ? (now.getHours()+1) % 24 : now.getHours();
+      openSlotModal(null, state.plagesSelectedDate, h);
+    });
+    root.querySelector("#weekPrev").addEventListener("click", ()=>{
+      state.plagesWeekOffset -= 1;
+      shiftSelectedDate(-7);
+      renderStack();
+    });
+    root.querySelector("#weekNext").addEventListener("click", ()=>{
+      state.plagesWeekOffset += 1;
+      shiftSelectedDate(7);
+      renderStack();
+    });
+    root.querySelectorAll(".day-btn").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        state.plagesSelectedDate = btn.dataset.date;
+        renderStack();
+      });
+    });
+    const copyBtn = root.querySelector("#copyWeekBtn");
+    if(copyBtn) copyBtn.addEventListener("click", async ()=>{
+      await copyPreviousWeekSlots();
+      renderStack();
+    });
+    root.querySelectorAll(".hour-row").forEach(row=>{
+      row.addEventListener("click", ()=>{
+        openSlotModal(null, state.plagesSelectedDate, parseInt(row.dataset.hour, 10));
+      });
+    });
+    root.querySelectorAll(".slot-block").forEach(block=>{
+      block.addEventListener("click", async (e)=>{
+        e.stopPropagation();
+        const slot = (await idbGetAll("timeslots")).find(s=>s.id===block.dataset.slot);
+        if(slot) openSlotModal(slot, null, null);
+      });
+    });
+  }
+
+  if(screenName === "habitudes"){
+    root.querySelector("#addHabitBtn").addEventListener("click", ()=> openHabitModal(null));
+    root.querySelector("#momentFilter").addEventListener("change", (e)=>{
+      state.habitsMomentFilter = e.target.value;
+      renderStack();
+    });
+    root.querySelector("#energyFilter").addEventListener("change", (e)=>{
+      state.habitsEnergyLevel = e.target.value;
+      renderStack();
+    });
+    root.querySelectorAll("[data-checkhabit]").forEach(el=>{
+      el.addEventListener("click", async ()=>{
+        const id = el.dataset.checkhabit;
+        const habit = (await idbGetAll("habits")).find(h=>h.id===id);
+        if(habit){
+          const todayISO = toISODate(new Date());
+          habit.completions = habit.completions || {};
+          if(habit.completions[todayISO]) delete habit.completions[todayISO];
+          else habit.completions[todayISO] = true;
+          await idbPut("habits", habit);
+          renderStack();
+        }
+      });
+    });
+    root.querySelectorAll("[data-edit-habit]").forEach(btn=>{
+      btn.addEventListener("click", async ()=>{
+        const habit = (await idbGetAll("habits")).find(h=>h.id===btn.dataset.editHabit);
+        if(habit) openHabitModal(habit);
+      });
+    });
+    root.querySelectorAll("[data-skip-habit]").forEach(btn=>{
+      btn.addEventListener("click", async ()=>{
+        if(btn.classList.contains("disabled")) return;
+        const id = btn.dataset.skipHabit;
+        const habit = (await idbGetAll("habits")).find(h=>h.id===id);
+        if(!habit) return;
+        const settings = Object.fromEntries((await idbGetAll("settings")).map(s=>[s.key,s.value]));
+        const weekStartDay = settings.weekStart ?? 1;
+        const weekISOs = getWeekDates(0, weekStartDay).map(toISODate);
+        habit.completions = habit.completions || {};
+        const alreadyUsed = weekISOs.some(d=>habit.completions[d] === "skip");
+        if(alreadyUsed) return;
+        habit.completions[toISODate(new Date())] = "skip";
+        await idbPut("habits", habit);
+        renderStack();
+      });
+    });
+  }
+
+  if(screenName === "reglages"){
+    root.querySelector("#rName").addEventListener("change", async (e)=>{
+      await idbPut("settings", {key:"userName", value: e.target.value.trim()});
+    });
+    root.querySelector("#rLanguage").addEventListener("change", async (e)=>{
+      await idbPut("settings", {key:"language", value: e.target.value});
+      state.language = e.target.value;
+      renderStack();
+    });
+    root.querySelector("#rWeekStart").addEventListener("change", async (e)=>{
+      await idbPut("settings", {key:"weekStart", value: parseInt(e.target.value, 10)});
+    });
+    root.querySelector("#rTheme").addEventListener("change", async (e)=>{
+      await idbPut("settings", {key:"appTheme", value: e.target.value});
+      applyTheme(e.target.value);
+    });
+    root.querySelector("#rAllowSkip").addEventListener("change", async (e)=>{
+      await idbPut("settings", {key:"allowHabitSkip", value: e.target.checked});
+    });
+
+    root.querySelector("#exportDataBtn").addEventListener("click", async ()=>{
+      await exportAllData();
+      openModal(`
+        <h3>${tr("exportTitle")}</h3>
+        <p style="font-size:14px; line-height:1.5; margin-bottom:18px;">${tr("exportMsg")}</p>
+        <div class="modal-actions" style="justify-content:center;">
+          <button class="btn-primary" id="exportMsgClose">${tr("fermer")}</button>
+        </div>
+      `);
+      document.getElementById("exportMsgClose").addEventListener("click", closeModal);
+    });
+
+    const importInput = root.querySelector("#importFileInput");
+    root.querySelector("#importDataBtn").addEventListener("click", ()=> importInput.click());
+    importInput.addEventListener("change", (e)=>{
+      const file = e.target.files[0];
+      e.target.value = "";
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev)=>{
+        let payload;
+        try{ payload = JSON.parse(ev.target.result); }
+        catch(err){ payload = null; }
+        if(!payload || typeof payload.data !== "object"){
+          openModal(`
+            <h3>${tr("importErrorTitle")}</h3>
+            <p style="font-size:14px; line-height:1.5; margin-bottom:18px;">${tr("importErrorMsg")}</p>
+            <div class="modal-actions" style="justify-content:center;">
+              <button class="btn-primary" id="importErrorClose">${tr("fermer")}</button>
+            </div>
+          `);
+          document.getElementById("importErrorClose").addEventListener("click", closeModal);
+          return;
+        }
+        openModal(`
+          <h3>${tr("importConfirmTitle")}</h3>
+          <p style="font-size:14px; line-height:1.5; margin-bottom:18px;">${tr("importConfirmMsg")}</p>
+          <div class="modal-actions">
+            <button class="btn-delete" id="importConfirmBtn">${tr("importConfirmBtn")}</button>
+            <button class="btn-ghost" id="importCancelBtn">${tr("annuler")}</button>
+          </div>
+        `);
+        document.getElementById("importCancelBtn").addEventListener("click", closeModal);
+        document.getElementById("importConfirmBtn").addEventListener("click", async ()=>{
+          await restoreAllData(payload);
+          closeModal();
+          const settings = Object.fromEntries((await idbGetAll("settings")).map(s=>[s.key,s.value]));
+          applyTheme(settings.appTheme);
+          state.language = settings.language || "fr";
+          state.currentSlotThemeOverride = null;
+          state.currentItemOverride = null;
+          state.projetsStackMemory = null;
+          state.stack = [{screen:"dashboard"}];
+          renderStack();
+        });
+      };
+      reader.readAsText(file);
+    });
+  }
+}
+
+/* Repli/dépli et vidage de la section "Terminé" */
+function attachDoneSectionEvents(root){
+  root.querySelectorAll("[data-donetoggle]").forEach(header=>{
+    header.addEventListener("click", (e)=>{
+      if(e.target.closest("[data-cleardone]")) return;
+      const key = header.dataset.donetoggle;
+      root.querySelector("#doneList-"+key).classList.toggle("collapsed");
+    });
+  });
+  root.querySelectorAll("[data-cleardone]").forEach(btn=>{
+    btn.addEventListener("click", async (e)=>{
+      e.stopPropagation();
+      const key = btn.dataset.cleardone;
+      const list = root.querySelector("#doneList-"+key);
+      const ids = [...list.querySelectorAll("[data-item]")].map(el=>el.dataset.item);
+      for(const id of ids) await idbDelete("tasks", id);
+      renderStack();
+    });
+  });
+}
+
+function attachItemRowEvents(root){
+  root.querySelectorAll("[data-checktask]").forEach(el=>{
+    el.addEventListener("click", async (e)=>{
+      e.stopPropagation();
+      const id = el.dataset.checktask;
+      const task = (await idbGetAll("tasks")).find(t=>t.id===id);
+      if(task){ task.status = task.status==="done" ? "todo" : "done"; await idbPut("tasks", task); renderStack(); }
+    });
+  });
+  root.querySelectorAll('.item-row[data-kind="project"]').forEach(row=>{
+    row.addEventListener("click", ()=>{
+      if(row.classList.contains("dragging")) return;
+      pushScreen({screen:"projectDetail", projectId: row.dataset.item});
+    });
+  });
+  root.querySelectorAll("[data-edit-item]").forEach(btn=>{
+    btn.addEventListener("click", async (e)=>{
+      e.stopPropagation();
+      const id = btn.dataset.editItem, kind = btn.dataset.editKind;
+      const store = kind === "project" ? "projects" : "tasks";
+      const obj = (await idbGetAll(store)).find(x=>x.id===id);
+      if(obj) openItemModal(kind, obj, {});
+    });
+  });
+}
+
+function attachCatFormEvents(root){
+  let selectedColor = SWATCH_COLORS[0];
+  root.querySelectorAll(".swatch").forEach(sw=>{
+    sw.addEventListener("click", ()=>{
+      root.querySelectorAll(".swatch").forEach(s=>s.classList.remove("selected"));
+      sw.classList.add("selected");
+      selectedColor = sw.dataset.color;
+    });
+  });
+  root.querySelector("#cancelCatBtn").addEventListener("click", ()=>{
+    root.querySelector("#catFormHolder").innerHTML = "";
+  });
+  root.querySelector("#saveCatBtn").addEventListener("click", async ()=>{
+    const name = root.querySelector("#newCatName").value.trim();
+    if(!name) return;
+    const themes = await idbGetAll("themes");
+    await idbPut("themes", {
+      id: uid(), name, color: selectedColor,
+      forProjects:true, forSlots:true, isDefault:false,
+      order: themes.length
+    });
+    renderStack();
+  });
+}
+
+/* =========================================================================
+   Modale générique (modifier / supprimer)
+   ========================================================================= */
+function openModal(html){
+  document.getElementById("modalBox").innerHTML = html;
+  document.getElementById("modalOverlay").style.display = "flex";
+}
+function closeModal(){
+  document.getElementById("modalOverlay").style.display = "none";
+  document.getElementById("modalBox").innerHTML = "";
+}
+document.getElementById("modalOverlay").addEventListener("click", (e)=>{
+  if(e.target.id === "modalOverlay") closeModal();
+});
+
+/* Suppression en 2 clics (pas de confirm() natif, qui ne fonctionne pas dans un aperçu en iframe) */
+function attachTwoStepDelete(btn, onConfirm){
+  let armed = false;
+  btn.addEventListener("click", ()=>{
+    if(!armed){
+      armed = true;
+      btn.textContent = "Confirmer la suppression";
+      btn.classList.add("armed");
+    } else {
+      onConfirm();
+    }
+  });
+}
+
+let modalContext = {};
+
+/* ---- Formulaire projet / tâche ---- */
+function itemFormHtml(kind, existing, showCategory, themesList){
+  const isTask = kind === "task";
+  const starred = !!(existing && existing.starred);
+  return `
+  <h3>${existing ? (isTask?tr("modifierTache"):tr("modifierProjet")) : (isTask?tr("ajouterTache"):tr("ajouterProjet"))}</h3>
+  <input type="text" id="mName" placeholder="${tr("nom")}" value="${existing ? escapeHtml(existing.name) : ""}">
+  ${showCategory ? `
+  <label>${tr("categorie")}</label>
+  <select id="mTheme">
+    ${themesList.map(t=>`<option value="${t.id}">${escapeHtml(themeDisplayName(t))}</option>`).join("")}
+  </select>
+  ` : ``}
+  <label>${tr("echeanceOpt")}</label>
+  <input type="date" id="mDeadline" value="${existing && existing.deadline ? existing.deadline : ""}">
+  <label>${tr("priorite")}</label>
+  <select id="mPriority">
+    <option value="aucune">${tr("aucunePriorite")}</option>
+    <option value="faible">${tr("faible")}</option>
+    <option value="moyenne">${tr("moyenne")}</option>
+    <option value="elevee">${tr("elevee")}</option>
+  </select>
+  ${isTask ? `
+  <label>${tr("recurrenceLabel")}</label>
+  <select id="mRecurrence">
+    <option value="aucune">${tr("aucuneRec")}</option>
+    <option value="quotidienne">${tr("tousLesJours")}</option>
+    <option value="hebdomadaire">${tr("toutesLesSemaines")}</option>
+    <option value="2semaines">${tr("toutesLes2Semaines")}</option>
+    <option value="mensuelle">${tr("tousLesMois")}</option>
+    <option value="annuelle">${tr("tousLesAns")}</option>
+  </select>
+  <div class="star-toggle-row">
+    <span>${tr("tachePrioritaireJour")}</span>
+    <button type="button" class="star-toggle ${starred?'active':''}" id="mStarredToggle" aria-pressed="${starred}">${ICONS.star}</button>
+  </div>
+  ` : ``}
+  <div class="modal-actions">
+    <button class="btn-primary" id="mSave">${tr("enregistrer")}</button>
+    ${existing ? `<button class="btn-delete" id="mDelete">${tr("supprimer")}</button>` : ""}
+    <button class="btn-ghost" id="mCancel">${tr("annuler")}</button>
+  </div>`;
+}
+
+async function openItemModal(kind, existing, context){
+  context = context || {};
+  // La catégorie ne se change que pour les projets et les tâches seules (pas les sous-tâches, qui héritent de leur projet)
+  const showCategory = !(existing && existing.projectId) && !context.projectId;
+  let themesList = [];
+  if(showCategory) themesList = (await idbGetAll("themes")).filter(t=>t.forProjects).sort((a,b)=>(a.order||0)-(b.order||0));
+
+  modalContext = {kind, existing, context, showCategory};
+  openModal(itemFormHtml(kind, existing, showCategory, themesList));
+  document.getElementById("mPriority").value = existing ? (existing.priority || "aucune") : "aucune";
+  if(kind === "task"){
+    document.getElementById("mRecurrence").value = existing ? (existing.recurrence || "aucune") : "aucune";
+  }
+  if(showCategory){
+    document.getElementById("mTheme").value = existing ? existing.themeId : (context.themeId || "default");
+  }
+  document.getElementById("mCancel").addEventListener("click", closeModal);
+  document.getElementById("mSave").addEventListener("click", saveItemModal);
+  const starToggle = document.getElementById("mStarredToggle");
+  if(starToggle){
+    starToggle.addEventListener("click", ()=>{
+      const active = starToggle.classList.toggle("active");
+      starToggle.setAttribute("aria-pressed", active);
+    });
+  }
+  const delBtn = document.getElementById("mDelete");
+  if(delBtn){
+    attachTwoStepDelete(delBtn, async ()=>{
+      const store = kind === "project" ? "projects" : "tasks";
+      if(kind === "project"){
+        const subs = await getSubtasks(existing.id);
+        for(const s of subs) await idbDelete("tasks", s.id);
+      }
+      await idbDelete(store, existing.id);
+      closeModal();
+      const top = state.stack[state.stack.length-1];
+      if(top.screen === "projectDetail" && top.projectId === existing.id) popScreen();
+      else renderStack();
+    });
+  }
+}
+
+async function saveItemModal(){
+  const {kind, existing, context, showCategory} = modalContext;
+  const name = document.getElementById("mName").value.trim();
+  if(!name) return;
+  const deadline = document.getElementById("mDeadline").value || null;
+  const priority = document.getElementById("mPriority").value;
+  const store = kind === "project" ? "projects" : "tasks";
+  const obj = existing ? {...existing} : {
+    id: uid(), status: "active", order: Date.now(),
+    themeId: context.themeId || "default",
+    projectId: context.projectId || null
+  };
+  obj.name = name;
+  obj.deadline = deadline;
+  obj.priority = priority;
+  if(showCategory){
+    obj.themeId = document.getElementById("mTheme").value;
+  }
+  if(kind === "task"){
+    obj.recurrence = document.getElementById("mRecurrence").value;
+    const starToggle = document.getElementById("mStarredToggle");
+    obj.starred = starToggle ? starToggle.classList.contains("active") : false;
+  }
+  await idbPut(store, obj);
+  closeModal();
+  renderStack();
+}
+
+/* ---- Formulaire catégorie (édition) ---- */
+function catEditFormHtml(theme){
+  return `
+  <h3>${tr("modifierCategorie")}</h3>
+  <input type="text" id="mCatName" value="${escapeHtml(themeDisplayName(theme))}" maxlength="30">
+  <div class="swatches" id="mCatSwatches">
+    ${SWATCH_COLORS.map(c=>`<div class="swatch ${c===theme.color?'selected':''}" data-color="${c}" style="background:${c}"></div>`).join("")}
+  </div>
+  <div class="modal-actions">
+    <button class="btn-primary" id="mCatSave">${tr("enregistrer")}</button>
+    ${theme.isDefault ? "" : `<button class="btn-delete" id="mCatDelete">${tr("supprimer")}</button>`}
+    <button class="btn-ghost" id="mCatCancel">${tr("annuler")}</button>
+  </div>`;
+}
+
+function openCatEditModal(theme){
+  let selectedColor = theme.color;
+  openModal(catEditFormHtml(theme));
+  document.querySelectorAll("#mCatSwatches .swatch").forEach(sw=>{
+    sw.addEventListener("click", ()=>{
+      document.querySelectorAll("#mCatSwatches .swatch").forEach(s=>s.classList.remove("selected"));
+      sw.classList.add("selected");
+      selectedColor = sw.dataset.color;
+    });
+  });
+  document.getElementById("mCatCancel").addEventListener("click", closeModal);
+  document.getElementById("mCatSave").addEventListener("click", async ()=>{
+    const name = document.getElementById("mCatName").value.trim();
+    if(!name) return;
+    if(name !== themeDisplayName(theme)) theme.nameCustomized = true;
+    theme.name = name; theme.color = selectedColor;
+    await idbPut("themes", theme);
+    closeModal();
+    renderStack();
+  });
+  const delBtn = document.getElementById("mCatDelete");
+  if(delBtn){
+    attachTwoStepDelete(delBtn, async ()=>{
+      // Les projets/tâches de cette catégorie sont réaffectés à "Non classé", jamais supprimés
+      const projects = await idbGetAll("projects");
+      const tasks = await idbGetAll("tasks");
+      for(const p of projects) if(p.themeId === theme.id){ p.themeId = "default"; await idbPut("projects", p); }
+      for(const t of tasks) if(t.themeId === theme.id){ t.themeId = "default"; await idbPut("tasks", t); }
+      await idbDelete("themes", theme.id);
+      closeModal();
+      state.stack = [{screen:"cats"}];
+      renderStack();
+    });
+  }
+}
+
+/* ---- Sélecteur de catégorie pour le Dashboard (remplace la navigation vers Projets) ---- */
+async function openThemePickerModal(){
+  const themes = (await idbGetAll("themes")).filter(t=>t.forSlots || t.forProjects).sort((a,b)=>(a.order||0)-(b.order||0));
+  openModal(`
+    <h3>Choisir une catégorie</h3>
+    <div class="theme-picker-list">
+      ${themes.map(t=>`<button class="theme-pick-btn" data-pick-theme="${t.id}" style="background:${t.color}">${escapeHtml(themeDisplayName(t))}</button>`).join("")}
+    </div>
+    <div class="modal-actions"><button class="btn-ghost" id="mCancelPick">${tr("annuler")}</button></div>
+  `);
+  document.getElementById("mCancelPick").addEventListener("click", closeModal);
+  document.querySelectorAll("[data-pick-theme]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      state.currentSlotThemeOverride = btn.dataset.pickTheme;
+      state.currentItemOverride = null;
+      closeModal();
+      renderStack();
+    });
+  });
+}
+
+/* =========================================================================
+   Drag & drop reorder (pointer-based, touch friendly)
+   ========================================================================= */
+function makeDraggable(root, listSelector, itemSelector, storeKind){
+  const list = root.querySelector(listSelector);
+  if(!list) return;
+
+  list.querySelectorAll(itemSelector).forEach(item=>{
+    item.addEventListener("pointerdown", (e)=>{
+      // ignore drags starting on interactive controls
+      if(e.target.closest("[data-checktask]") || e.target.closest("select") || e.target.closest("[data-edit-item]") || e.target.closest("[data-edit-cat]")) return;
+      startDrag(item, e.pointerId, e.clientY);
+    });
+  });
+
+  /* Réordonnancement "virtuel" basé sur un calcul d'index (distance parcourue ÷ hauteur de ligne),
+     plutôt que sur la mesure en direct des positions des voisins. Mesurer un voisin pendant que sa
+     propre transition CSS est en cours renvoie une position qui bouge encore, ce qui provoquait
+     l'oscillation. Ici, tout est calculé une seule fois au départ, donc rien ne peut s'emballer.
+     On écoute aussi document (pas l'élément lui-même) pour ne jamais perdre le geste en cours. */
+  function startDrag(item, pointerId, downY){
+    const startY = downY;
+    let dragging = false;
+
+    const itemsInitial = [...list.querySelectorAll(itemSelector)];
+    const startIndex = itemsInitial.indexOf(item);
+    let order = [...itemsInitial];
+
+    const style = getComputedStyle(item);
+    const rowHeight = item.offsetHeight + (parseFloat(style.marginBottom) || 0);
+
+    function onMove(e){
+      if(e.pointerId !== pointerId) return;
+      const dy = e.clientY - startY;
+      if(!dragging){
+        if(Math.abs(dy) < 4) return;
+        dragging = true;
+        item.classList.add("dragging");
+        item.style.zIndex = 10;
+      }
+      item.style.transform = `translateY(${dy}px)`;
+
+      const shift = Math.round(dy / rowHeight);
+      const targetIndex = Math.min(Math.max(startIndex + shift, 0), itemsInitial.length - 1);
+      const currentIndex = order.indexOf(item);
+
+      if(targetIndex !== currentIndex){
+        order.splice(currentIndex, 1);
+        order.splice(targetIndex, 0, item);
+        itemsInitial.forEach((el, originalIdx)=>{
+          if(el === item) return;
+          const newIdx = order.indexOf(el);
+          const offset = (newIdx - originalIdx) * rowHeight;
+          el.style.transform = offset ? `translateY(${offset}px)` : "";
+        });
+      }
+    }
+
+    function finish(e){
+      if(e.pointerId !== pointerId) return;
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", finish);
+      document.removeEventListener("pointercancel", finish);
+
+      if(dragging){
+        // Applique l'ordre final au vrai DOM. Comme le transform de chaque ligne représentait déjà
+        // exactement sa position finale, l'enlever juste après ne produit aucun saut visuel.
+        order.forEach(el=> list.appendChild(el));
+        itemsInitial.forEach(el=>{ el.style.transform = ""; el.style.zIndex = ""; });
+        item.classList.remove("dragging");
+        persistOrder(list, itemSelector, storeKind);
+      }
+    }
+
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", finish);
+    document.addEventListener("pointercancel", finish);
+  }
+}
+
+async function persistOrder(list, itemSelector, storeKind){
+  const els = [...list.querySelectorAll(itemSelector)];
+  for(let i=0;i<els.length;i++){
+    const el = els[i];
+    if(storeKind === "themes"){
+      const t = (await idbGetAll("themes")).find(x=>x.id===el.dataset.cat);
+      if(t){ t.order = i; await idbPut("themes", t); }
+    } else {
+      const kind = el.dataset.kind;
+      const store = kind === "project" ? "projects" : "tasks";
+      const obj = (await idbGetAll(store)).find(x=>x.id===el.dataset.item);
+      if(obj){ obj.order = i; await idbPut(store, obj); }
+    }
+  }
+}
+
+/* =========================================================================
+   Quick add
+   ========================================================================= */
+document.getElementById("quickAddSend").addEventListener("click", quickAdd);
+document.getElementById("quickAddInput").addEventListener("keydown", (e)=>{ if(e.key==="Enter") quickAdd(); });
+
+async function quickAdd(){
+  const input = document.getElementById("quickAddInput");
+  const name = input.value.trim();
+  if(!name) return;
+  const top = state.stack[state.stack.length-1];
+
+  let themeId = "default";
+  let projectId = null;
+
+  if(top.screen === "catDetail") themeId = top.themeId;
+  if(top.screen === "projectDetail"){
+    projectId = top.projectId;
+    const project = (await idbGetAll("projects")).find(p=>p.id===projectId);
+    themeId = project ? project.themeId : "default";
+  }
+
+  await idbPut("tasks", {
+    id: uid(), name, projectId, themeId,
+    deadline:null, priority:"aucune", status:"active",
+    order: Date.now(), starred:false, recurrence:"aucune"
+  });
+  input.value = "";
+  renderStack();
+}
+
+/* =========================================================================
+   BOOT
+   ========================================================================= */
+(async function boot(){
+  await openDB();
+  await seedDefaults();
+  const settings = Object.fromEntries((await idbGetAll("settings")).map(s=>[s.key,s.value]));
+  applyTheme(settings.appTheme);
+  state.language = settings.language || "fr";
+  renderStack();
+  await checkWeekRollover();
+})();
+
+if("serviceWorker" in navigator){
+  window.addEventListener("load", ()=>{
+    navigator.serviceWorker.register("service-worker.js").catch(err=>{
+      console.warn("Service worker non enregistré :", err);
+    });
+  });
+}
+
+/* Sur mobile, rouvrir l'app depuis l'arrière-plan ne recharge pas forcément la page :
+   on revérifie donc aussi le changement de semaine à chaque retour au premier plan. */
+document.addEventListener("visibilitychange", ()=>{
+  if(document.visibilityState === "visible") checkWeekRollover();
+});
+</script>
+</body>
+</html>
