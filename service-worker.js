@@ -1,7 +1,7 @@
 /* Service worker de Beeziday — met en cache la coquille de l'app pour un usage hors-ligne.
    IMPORTANT : change CACHE_NAME (ex: "beeziday-v2") à chaque fois que tu modifies index.html
    de façon significative, sinon les téléphones continueront d'utiliser l'ancienne version en cache. */
-const CACHE_NAME = "beeziday-v1";
+const CACHE_NAME = "beeziday-v2";
 const ASSETS = [
   "./",
   "./index.html",
