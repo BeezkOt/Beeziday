@@ -46,13 +46,13 @@
   }
 
   *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
-  html,body{height:100%;}
+  html,body{height:100%; overflow:hidden;}
   body{
     margin:0;
     font-family: var(--font);
     background: var(--bg);
     color: var(--text);
-    overscroll-behavior-y: none;
+    overscroll-behavior: none;
   }
   h1,h2,h3,p{margin:0;}
   h1,h2,h3{color:var(--heading, var(--text));}
@@ -60,9 +60,13 @@
   #app{
     max-width: 480px;
     margin: 0 auto;
-    min-height: 100vh;
+    height: 100vh;
+    height: 100dvh;
     position: relative;
+    overflow-y: auto;
     overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
     padding-bottom: calc(var(--nav-h) + 24px);
     background: var(--bg);
   }
@@ -76,6 +80,9 @@
     padding: 20px 18px calc(var(--nav-h) + 24px);
     transition: transform .3s cubic-bezier(.32,.72,.35,1);
     will-change: transform;
+  }
+  .screen.has-quickadd{
+    padding-bottom: calc(var(--nav-h) + 90px);
   }
 
   .screen-header{
@@ -137,7 +144,7 @@
     border-radius: var(--radius-lg); padding:16px; margin-bottom: 8px;
   }
   .project-card .top-row{display:flex; justify-content:space-between; align-items:baseline; gap:10px;}
-  .project-card .p-title{font-weight:700; font-size:16px;}
+  .project-card .p-title{font-weight:700; font-size:16px; overflow-wrap:break-word; word-break:break-word;}
   .project-card .p-label{font-weight:500; color:var(--text-muted); font-size:13px;}
   .project-card .p-deadline{font-size:12px; color:var(--text-muted); white-space:nowrap;}
   .progress-row{display:flex; align-items:center; gap:10px; margin-top:12px;}
@@ -179,7 +186,7 @@
   .check-circle.done{ background:var(--accent); }
   .check-circle svg{width:14px;height:14px; stroke:#fff; display:none;}
   .check-circle.done svg{display:block;}
-  .task-name{flex:1; font-weight:600; font-size:15px;}
+  .task-name{flex:1; min-width:0; font-weight:600; font-size:15px; overflow-wrap:break-word; word-break:break-word;}
   .star{width:20px;height:20px; flex-shrink:0; color: var(--gold);}
   .star.off{display:none;}
 
@@ -211,7 +218,7 @@
     display:flex; align-items:center; gap:12px;
     width:100%; border-radius: var(--radius-md); padding:16px;
     color:#fff; font-weight:700; font-size:15px; margin-bottom:10px;
-    cursor:grab; user-select:none; position:relative; touch-action:none;
+    cursor:grab; user-select:none; position:relative; touch-action:pan-y;
     transition: transform .18s ease;
   }
   .cat-row.dragging{ transition:none; cursor:grabbing; opacity:.5; }
@@ -222,16 +229,23 @@
   .item-row{
     background: var(--surface-raised); border:1px solid var(--border);
     border-radius: var(--radius-lg); padding:14px 16px; margin-bottom:10px;
-    cursor:grab; user-select:none; touch-action:none;
+    cursor:grab; user-select:none; touch-action:pan-y;
     transition: transform .18s ease;
   }
   .item-row.dragging{ opacity:.5; transition:none; cursor:grabbing; }
   .item-row .top-row{display:flex; justify-content:space-between; align-items:center; gap:8px;}
-  .item-row .p-title{font-weight:700; font-size:15px;}
+  .item-row .p-title{font-weight:700; font-size:15px; min-width:0; overflow-wrap:break-word; word-break:break-word;}
   .item-row .meta{display:flex; align-items:center; gap:10px; margin-top:8px; font-size:12px; color:var(--text-muted);}
   .item-row .meta .deadline.soon{color:var(--alert); font-weight:700;}
-  .item-row.task-row{display:flex; align-items:center; gap:12px;}
-  .item-row.task-row .task-name{flex:1;}
+  .item-row.task-row{display:block;}
+  .task-row-main{display:flex; align-items:center; gap:12px;}
+  .task-desc{
+    margin-top:10px; padding-top:10px; border-top:1px solid var(--border);
+    font-size:13px; color:var(--text-muted); line-height:1.5; word-break:break-word;
+    display:none;
+  }
+  .item-row.task-row.desc-open .task-desc{display:block;}
+  .task-desc a{color:var(--accent); word-break:break-all;}
   .repeat-icon{width:15px;height:15px; color:var(--text-muted); flex-shrink:0;}
   .priority-icon{flex-shrink:0;}
   .priority-icon.priority-elevee{color: var(--alert);}
@@ -334,6 +348,19 @@
     width:100%; border:1px solid var(--border); border-radius: var(--radius-sm); color:var(--text);
     padding:10px 12px; font-size:16px; font-family:var(--font); margin-bottom:12px; outline:none; background:var(--surface);
   }
+  .modal-box textarea{
+    width:100%; border:1px solid var(--border); border-radius: var(--radius-sm); color:var(--text);
+    padding:10px 12px; font-size:16px; font-family:var(--font); margin-bottom:12px; outline:none; background:var(--surface);
+    resize:vertical;
+  }
+  .field-with-clear{display:flex; align-items:center; gap:8px;}
+  .field-with-clear input[type=date]{flex:1; margin-bottom:12px;}
+  .clear-field-btn{
+    background:var(--surface); border:1px solid var(--border); border-radius:50%;
+    width:36px; height:36px; margin-bottom:12px; flex-shrink:0; color:var(--text-muted);
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .clear-field-btn svg{width:15px; height:15px;}
   .modal-box input[type=time]{
     width:auto; max-width:100%; min-width:0; box-sizing:border-box; border:1px solid var(--border); border-radius: var(--radius-sm); color:var(--text);
     padding:9px 6px; font-size:16px; font-family:var(--font); margin-bottom:12px; outline:none; background:var(--surface);
@@ -527,6 +554,11 @@
    ========================================================================= */
 const DB_NAME = "flow_db";
 const DB_VERSION = 1;
+/* Version de l'app, indépendante de la structure interne des données (DATA_SCHEMA_VERSION).
+   Change-la à chaque mise à jour publiée, en même temps que CACHE_NAME dans service-worker.js
+   et version.json (utilisés pour l'export et la détection de nouvelle version). */
+const APP_VERSION = "1.0.0";
+const DATA_SCHEMA_VERSION = 1;
 let db;
 
 function openDB(){
@@ -696,6 +728,9 @@ const STRINGS = {
     recurrenceLabel: "Récurrence", aucuneRec: "Aucune", toutesLesSemaines: "Toutes les semaines",
     toutesLes2Semaines: "Toutes les 2 semaines", tousLesMois: "Tous les mois", tousLesAns: "Tous les ans",
     tachePrioritaireJour: "Tâche prioritaire du jour",
+    retirerEcheance: "Retirer l'échéance",
+    descriptionLabel: "Description (optionnelle)",
+    descriptionPlaceholder: "Notes, détails, liens...",
     rienIci: "Rien ici pour l'instant.", aucuneSousTache: "Aucune sous-tâche pour l'instant.",
     creerTacheRapide: "Créer une nouvelle tâche rapidement", creerSousTacheRapide: "Créer une nouvelle sous-tâche",
     modifierCategorie: "Modifier la catégorie", nomCategorie: "Nom de la catégorie",
@@ -710,12 +745,15 @@ const STRINGS = {
     skipNote: "Fait apparaître un bouton \"Passer\" sur chaque habitude, utilisable une fois par semaine et par habitude.",
     exporterMesDonnees: "Exporter mes données", importerMesDonnees: "Importer mes données",
     exportTitle: "Export",
+    telecharger: "Télécharger",
     exportMsg: "Un fichier contenant toutes tes données dans l'application va être téléchargé. Sur iPhone, appuie sur l'icône de partage ↑ puis « Enregistrer dans Fichiers » pour le sauvegarder. Garde-le précieusement : il te servira à restaurer tes données si besoin.",
     importConfirmTitle: "Importer des données",
     importConfirmMsg: "Ceci va remplacer toutes tes données actuelles par celles du fichier importé. Cette action est irréversible.",
     importConfirmBtn: "Remplacer mes données",
     importErrorTitle: "Fichier invalide",
     importErrorMsg: "Ce fichier ne semble pas être un export valide de Beeziday.",
+    updateAvailableTitle: "Mise à jour disponible",
+    updateAvailableMsg: "Une nouvelle version de Beeziday est disponible. Par précaution, pense à exporter tes données avant de mettre à jour. Pour mettre à jour : ferme complètement l'app (glisse-la vers le haut pour la fermer) puis rouvre-la.",
     dimanche:"Dimanche", lundi:"Lundi", mardi:"Mardi", mercredi:"Mercredi", jeudi:"Jeudi", vendredi:"Vendredi", samedi:"Samedi",
     touteLaJournee: "Toute la journée", ajouterHabitude: "Ajouter une habitude", modifierHabitude: "Modifier une habitude",
     nomHabitude: "Nom de l'habitude", frequence: "Fréquence", tousLesJours: "Tous les jours", xFoisParSemaine: "X fois par semaine",
@@ -758,6 +796,9 @@ const STRINGS = {
     recurrenceLabel: "Recurrence", aucuneRec: "None", toutesLesSemaines: "Every week",
     toutesLes2Semaines: "Every 2 weeks", tousLesMois: "Every month", tousLesAns: "Every year",
     tachePrioritaireJour: "Priority task of the day",
+    retirerEcheance: "Remove due date",
+    descriptionLabel: "Description (optional)",
+    descriptionPlaceholder: "Notes, details, links...",
     rienIci: "Nothing here yet.", aucuneSousTache: "No subtasks yet.",
     creerTacheRapide: "Quickly add a task", creerSousTacheRapide: "Add a new subtask",
     modifierCategorie: "Edit category", nomCategorie: "Category name",
@@ -772,12 +813,15 @@ const STRINGS = {
     skipNote: "Adds a \"Skip\" button on each habit, usable once a week per habit.",
     exporterMesDonnees: "Export my data", importerMesDonnees: "Import my data",
     exportTitle: "Export",
+    telecharger: "Download",
     exportMsg: "A file containing all your app data will be downloaded. On iPhone, tap the share icon ↑ then \"Save to Files\" to keep it. Keep it safe — you'll need it to restore your data if needed.",
     importConfirmTitle: "Import data",
     importConfirmMsg: "This will replace all your current data with the data from the imported file. This action cannot be undone.",
     importConfirmBtn: "Replace my data",
     importErrorTitle: "Invalid file",
     importErrorMsg: "This file doesn't look like a valid Beeziday export.",
+    updateAvailableTitle: "Update available",
+    updateAvailableMsg: "A new version of Beeziday is available. As a precaution, remember to export your data before updating. To update: fully close the app (swipe it away) then reopen it.",
     dimanche:"Sunday", lundi:"Monday", mardi:"Tuesday", mercredi:"Wednesday", jeudi:"Thursday", vendredi:"Friday", samedi:"Saturday",
     touteLaJournee: "All day", ajouterHabitude: "Add a habit", modifierHabitude: "Edit habit",
     nomHabitude: "Habit name", frequence: "Frequency", tousLesJours: "Every day", xFoisParSemaine: "X times a week",
@@ -819,6 +863,7 @@ const ICONS = {
   repeat: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>`,
   pencil: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`,
   coffeeCup: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3c.3 1 .1 1.6-.4 2.3-.6.8-.8 1.4-.4 2.4M13.5 3c.3 1 .1 1.6-.4 2.3-.6.8-.8 1.4-.4 2.4"/><path d="M4 9h13v5.5A4.5 4.5 0 0 1 12.5 19h-4A4.5 4.5 0 0 1 4 14.5V9Z"/><path d="M17 10.5h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M3 22.5h15"/></svg>`,
+  close: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>`,
 };
 
 /* Icône de priorité : 3 barres croissantes, dont N sont remplies selon le niveau.
@@ -1076,7 +1121,7 @@ async function renderStack(direction){
 
   const oldScreen = app.querySelector(".screen");
   const newScreen = document.createElement("div");
-  newScreen.className = "screen";
+  newScreen.className = "screen" + (PROJETS_SCREENS.includes(top.screen) ? " has-quickadd" : "");
   newScreen.innerHTML = html;
 
   if(direction === "push" && oldScreen){
@@ -1279,6 +1324,12 @@ function escapeHtml(str){
   return d.innerHTML;
 }
 
+/* Échappe le texte puis transforme les URLs en liens cliquables et les retours à la ligne en <br> */
+function linkify(text){
+  const esc = escapeHtml(text).replace(/\n/g, "<br>");
+  return esc.replace(/(https?:\/\/[^\s<]+)/g, (url)=>`<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`);
+}
+
 /* =========================================================================
    RENDER — Catégories
    ========================================================================= */
@@ -1361,14 +1412,17 @@ function renderItemRow(item){
     </div>`;
   }
   return `
-  <div class="item-row task-row" data-item="${item.id}" data-kind="task">
-    <div class="check-circle ${item.status==='done'?'done':''}" data-checktask="${item.id}">${ICONS.check}</div>
-    <div class="task-name">${escapeHtml(item.name)}</div>
-    ${item.recurrence && item.recurrence !== "aucune" ? `<span class="repeat-icon">${ICONS.repeat}</span>` : ""}
-    ${priorityIcon(item.priority)}
-    ${item.deadline ? `<span class="task-deadline ${daysUntil(item.deadline)<=14?'soon':''}">${formatDeadline(item.deadline)}</span>` : ""}
-    <span class="star ${item.starred?'':'off'}">${ICONS.star}</span>
-    <button class="row-edit-btn" data-edit-item="${item.id}" data-edit-kind="task" aria-label="Modifier">${ICONS.pencil}</button>
+  <div class="item-row task-row" data-item="${item.id}" data-kind="task" data-has-desc="${item.description ? 1 : 0}">
+    <div class="task-row-main">
+      <div class="check-circle ${item.status==='done'?'done':''}" data-checktask="${item.id}">${ICONS.check}</div>
+      <div class="task-name">${escapeHtml(item.name)}</div>
+      ${item.recurrence && item.recurrence !== "aucune" ? `<span class="repeat-icon">${ICONS.repeat}</span>` : ""}
+      ${priorityIcon(item.priority)}
+      ${item.deadline ? `<span class="task-deadline ${daysUntil(item.deadline)<=14?'soon':''}">${formatDeadline(item.deadline)}</span>` : ""}
+      <span class="star ${item.starred?'':'off'}">${ICONS.star}</span>
+      <button class="row-edit-btn" data-edit-item="${item.id}" data-edit-kind="task" aria-label="Modifier">${ICONS.pencil}</button>
+    </div>
+    ${item.description ? `<div class="task-desc">${linkify(item.description)}</div>` : ""}
   </div>`;
 }
 
@@ -1982,6 +2036,31 @@ async function checkWeekRollover(){
   await idbPut("settings", {key:"lastSeenWeekStart", value: curWeekStartISO});
 }
 
+/* Vérifie si une nouvelle version a été publiée, via un petit fichier version.json qu'il faut
+   mettre à jour (en même temps que APP_VERSION ici et CACHE_NAME dans service-worker.js) à
+   chaque déploiement. cache:"no-store" garantit qu'on ne lit jamais une copie mise en cache. */
+let updateNoticeShownFor = null;
+async function checkForNewVersion(){
+  try{
+    const res = await fetch("version.json", {cache:"no-store"});
+    if(!res.ok) return;
+    const data = await res.json();
+    if(data.version && data.version !== APP_VERSION && updateNoticeShownFor !== data.version){
+      updateNoticeShownFor = data.version;
+      openModal(`
+        <h3>${tr("updateAvailableTitle")}</h3>
+        <p style="font-size:14px; line-height:1.5; margin-bottom:18px;">${tr("updateAvailableMsg")}</p>
+        <div class="modal-actions" style="justify-content:center;">
+          <button class="btn-primary" id="updateNoticeClose">${tr("fermer")}</button>
+        </div>
+      `);
+      document.getElementById("updateNoticeClose").addEventListener("click", closeModal);
+    }
+  }catch(err){
+    // pas de connexion, ou version.json absent : on n'embête pas la personne pour ça
+  }
+}
+
 /* =========================================================================
    RENDER — Réglages
    ========================================================================= */
@@ -2002,7 +2081,7 @@ const DATA_STORES = ["themes","projects","tasks","timeslots","habits","settings"
 async function exportAllData(){
   const data = {};
   for(const store of DATA_STORES) data[store] = await idbGetAll(store);
-  const payload = {app:"Beeziday", exportedAt: new Date().toISOString(), version:1, data};
+  const payload = {app:"Beeziday", appVersion: APP_VERSION, schemaVersion: DATA_SCHEMA_VERSION, exportedAt: new Date().toISOString(), data};
   const blob = new Blob([JSON.stringify(payload, null, 2)], {type:"application/json"});
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -2014,6 +2093,8 @@ async function exportAllData(){
   URL.revokeObjectURL(url);
 }
 
+/* La restauration ne dépend d'aucune version précise : elle réimporte simplement les stores
+   présents dans le fichier, ce qui la rend compatible même si l'app a évolué depuis l'export. */
 async function restoreAllData(payload){
   for(const store of DATA_STORES){
     await idbClear(store);
@@ -2310,16 +2391,18 @@ function attachScreenEvents(screenName, root){
       await idbPut("settings", {key:"allowHabitSkip", value: e.target.checked});
     });
 
-    root.querySelector("#exportDataBtn").addEventListener("click", async ()=>{
-      await exportAllData();
+    root.querySelector("#exportDataBtn").addEventListener("click", ()=>{
       openModal(`
         <h3>${tr("exportTitle")}</h3>
         <p style="font-size:14px; line-height:1.5; margin-bottom:18px;">${tr("exportMsg")}</p>
         <div class="modal-actions" style="justify-content:center;">
-          <button class="btn-primary" id="exportMsgClose">${tr("fermer")}</button>
+          <button class="btn-primary" id="exportMsgConfirm">${tr("telecharger")}</button>
         </div>
       `);
-      document.getElementById("exportMsgClose").addEventListener("click", closeModal);
+      document.getElementById("exportMsgConfirm").addEventListener("click", async ()=>{
+        await exportAllData();
+        closeModal();
+      });
     });
 
     const importInput = root.querySelector("#importFileInput");
@@ -2416,6 +2499,12 @@ function attachItemRowEvents(root){
       if(obj) openItemModal(kind, obj, {});
     });
   });
+  root.querySelectorAll('.item-row[data-kind="task"][data-has-desc="1"]').forEach(row=>{
+    row.addEventListener("click", ()=>{
+      if(row.classList.contains("dragging")) return;
+      row.classList.toggle("desc-open");
+    });
+  });
 }
 
 function attachCatFormEvents(root){
@@ -2488,7 +2577,10 @@ function itemFormHtml(kind, existing, showCategory, themesList){
   </select>
   ` : ``}
   <label>${tr("echeanceOpt")}</label>
-  <input type="date" id="mDeadline" value="${existing && existing.deadline ? existing.deadline : ""}">
+  <div class="field-with-clear">
+    <input type="date" id="mDeadline" value="${existing && existing.deadline ? existing.deadline : ""}">
+    <button type="button" class="clear-field-btn" id="mDeadlineClear" aria-label="${tr("retirerEcheance")}">${ICONS.close}</button>
+  </div>
   <label>${tr("priorite")}</label>
   <select id="mPriority">
     <option value="aucune">${tr("aucunePriorite")}</option>
@@ -2510,6 +2602,8 @@ function itemFormHtml(kind, existing, showCategory, themesList){
     <span>${tr("tachePrioritaireJour")}</span>
     <button type="button" class="star-toggle ${starred?'active':''}" id="mStarredToggle" aria-pressed="${starred}">${ICONS.star}</button>
   </div>
+  <label>${tr("descriptionLabel")}</label>
+  <textarea id="mDescription" placeholder="${tr("descriptionPlaceholder")}" rows="4">${existing && existing.description ? escapeHtml(existing.description) : ""}</textarea>
   ` : ``}
   <div class="modal-actions">
     <button class="btn-primary" id="mSave">${tr("enregistrer")}</button>
@@ -2536,6 +2630,9 @@ async function openItemModal(kind, existing, context){
   }
   document.getElementById("mCancel").addEventListener("click", closeModal);
   document.getElementById("mSave").addEventListener("click", saveItemModal);
+  document.getElementById("mDeadlineClear").addEventListener("click", ()=>{
+    document.getElementById("mDeadline").value = "";
+  });
   const starToggle = document.getElementById("mStarredToggle");
   if(starToggle){
     starToggle.addEventListener("click", ()=>{
@@ -2582,6 +2679,7 @@ async function saveItemModal(){
     obj.recurrence = document.getElementById("mRecurrence").value;
     const starToggle = document.getElementById("mStarredToggle");
     obj.starred = starToggle ? starToggle.classList.contains("active") : false;
+    obj.description = document.getElementById("mDescription").value.trim();
   }
   await idbPut(store, obj);
   closeModal();
@@ -2670,7 +2768,7 @@ function makeDraggable(root, listSelector, itemSelector, storeKind){
   list.querySelectorAll(itemSelector).forEach(item=>{
     item.addEventListener("pointerdown", (e)=>{
       // ignore drags starting on interactive controls
-      if(e.target.closest("[data-checktask]") || e.target.closest("select") || e.target.closest("[data-edit-item]") || e.target.closest("[data-edit-cat]")) return;
+      if(e.target.closest("[data-checktask]") || e.target.closest("select") || e.target.closest("[data-edit-item]") || e.target.closest("[data-edit-cat]") || e.target.closest(".task-desc")) return;
       startDrag(item, e.pointerId, e.clientY);
     });
   });
@@ -2679,10 +2777,17 @@ function makeDraggable(root, listSelector, itemSelector, storeKind){
      plutôt que sur la mesure en direct des positions des voisins. Mesurer un voisin pendant que sa
      propre transition CSS est en cours renvoie une position qui bouge encore, ce qui provoquait
      l'oscillation. Ici, tout est calculé une seule fois au départ, donc rien ne peut s'emballer.
-     On écoute aussi document (pas l'élément lui-même) pour ne jamais perdre le geste en cours. */
+     On écoute aussi document (pas l'élément lui-même) pour ne jamais perdre le geste en cours.
+     Le glisser-déposer ne s'active qu'après 1s de pression immobile (LONG_PRESS_MS) : un mouvement
+     franc avant ce délai est interprété comme une intention de faire défiler la page, et on laisse
+     alors le scroll natif (touch-action:pan-y) prendre le relais normalement. */
+  const LONG_PRESS_MS = 1000;
+  const MOVE_CANCEL_PX = 10;
+
   function startDrag(item, pointerId, downY){
     const startY = downY;
     let dragging = false;
+    let canceled = false;
 
     const itemsInitial = [...list.querySelectorAll(itemSelector)];
     const startIndex = itemsInitial.indexOf(item);
@@ -2691,15 +2796,30 @@ function makeDraggable(root, listSelector, itemSelector, storeKind){
     const style = getComputedStyle(item);
     const rowHeight = item.offsetHeight + (parseFloat(style.marginBottom) || 0);
 
+    function activate(){
+      if(canceled) return;
+      dragging = true;
+      item.classList.add("dragging");
+      item.style.zIndex = 10;
+    }
+
+    const holdTimer = setTimeout(activate, LONG_PRESS_MS);
+
     function onMove(e){
       if(e.pointerId !== pointerId) return;
       const dy = e.clientY - startY;
+
       if(!dragging){
-        if(Math.abs(dy) < 4) return;
-        dragging = true;
-        item.classList.add("dragging");
-        item.style.zIndex = 10;
+        // Avant activation : un vrai mouvement = intention de scroll, on annule proprement.
+        if(Math.abs(dy) > MOVE_CANCEL_PX){
+          canceled = true;
+          clearTimeout(holdTimer);
+          finish(e);
+        }
+        return;
       }
+
+      e.preventDefault();
       item.style.transform = `translateY(${dy}px)`;
 
       const shift = Math.round(dy / rowHeight);
@@ -2719,7 +2839,8 @@ function makeDraggable(root, listSelector, itemSelector, storeKind){
     }
 
     function finish(e){
-      if(e.pointerId !== pointerId) return;
+      if(e && e.pointerId !== pointerId) return;
+      clearTimeout(holdTimer);
       document.removeEventListener("pointermove", onMove);
       document.removeEventListener("pointerup", finish);
       document.removeEventListener("pointercancel", finish);
@@ -2734,7 +2855,7 @@ function makeDraggable(root, listSelector, itemSelector, storeKind){
       }
     }
 
-    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointermove", onMove, {passive:false});
     document.addEventListener("pointerup", finish);
     document.addEventListener("pointercancel", finish);
   }
@@ -2798,6 +2919,7 @@ async function quickAdd(){
   state.language = settings.language || "fr";
   renderStack();
   await checkWeekRollover();
+  checkForNewVersion();
 })();
 
 if("serviceWorker" in navigator){
@@ -2809,9 +2931,13 @@ if("serviceWorker" in navigator){
 }
 
 /* Sur mobile, rouvrir l'app depuis l'arrière-plan ne recharge pas forcément la page :
-   on revérifie donc aussi le changement de semaine à chaque retour au premier plan. */
+   on revérifie donc aussi le changement de semaine et la disponibilité d'une nouvelle version
+   à chaque retour au premier plan. */
 document.addEventListener("visibilitychange", ()=>{
-  if(document.visibilityState === "visible") checkWeekRollover();
+  if(document.visibilityState === "visible"){
+    checkWeekRollover();
+    checkForNewVersion();
+  }
 });
 </script>
 </body>
