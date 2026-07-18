@@ -46,6 +46,14 @@
   }
 
   *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  select{
+    appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238A8F80' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 14px;
+    padding-right: 32px !important;
+  }
   html,body{height:100%; overflow:hidden;}
   body{
     margin:0;
@@ -123,7 +131,7 @@
   }
   .slot-row .slot-time{font-size:13px; color:var(--text-muted); font-weight:600;}
   .slot-select{
-    border:none; background:transparent; font-weight:700; font-size:14px;
+    border:none; background-color:transparent; font-weight:700; font-size:14px;
     color:var(--accent); text-align:right; max-width:150px;
   }
 
@@ -215,29 +223,40 @@
 
   /* ---------- Catégories ---------- */
   .cat-row{
-    display:flex; align-items:center; gap:12px;
-    width:100%; border-radius: var(--radius-md); padding:16px;
-    color:#fff; font-weight:700; font-size:15px; margin-bottom:10px;
-    cursor:grab; user-select:none; position:relative; touch-action:pan-y;
-    transition: transform .18s ease;
+    position:relative; overflow:hidden; border-radius: var(--radius-md);
+    margin-bottom:10px; cursor:grab; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;
+    position:relative; touch-action:none; transition: transform .18s ease;
   }
   .cat-row.dragging{ transition:none; cursor:grabbing; opacity:.5; }
-  .cat-row .cat-name{flex:1;}
-  .cat-row .chev{width:16px;height:16px; opacity:.85;}
+  .cat-row .swipe-content{
+    display:flex; align-items:center; gap:12px; width:100%;
+    background:var(--surface-raised); border:1px solid var(--border);
+    border-radius: var(--radius-md); padding:16px; transition: transform .2s ease;
+  }
+  .cat-row .cat-name{flex:1; font-weight:700; font-size:15px;}
+  .cat-row .chev-circle{
+    width:26px; height:26px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; color:#fff;
+  }
+  .cat-row .chev-circle svg{width:13px;height:13px;}
 
   /* ---------- Project/task list ---------- */
   .item-row{
-    background: var(--surface-raised); border:1px solid var(--border);
-    border-radius: var(--radius-lg); padding:14px 16px; margin-bottom:10px;
-    cursor:grab; user-select:none; touch-action:pan-y;
-    transition: transform .18s ease;
+    position:relative; overflow:hidden; border-radius: var(--radius-lg);
+    margin-bottom:10px; cursor:grab; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;
+    touch-action:none; transition: transform .18s ease;
   }
   .item-row.dragging{ opacity:.5; transition:none; cursor:grabbing; }
+  .item-row .swipe-content{
+    display:block; background: var(--surface-raised); border:1px solid var(--border);
+    border-radius: var(--radius-lg); padding:14px 16px; transition: transform .2s ease;
+  }
   .item-row .top-row{display:flex; justify-content:space-between; align-items:center; gap:8px;}
   .item-row .p-title{font-weight:700; font-size:15px; min-width:0; overflow-wrap:break-word; word-break:break-word;}
+  .folder-icon{width:18px; height:18px; flex-shrink:0;}
+  .folder-icon svg{width:18px; height:18px; display:block;}
   .item-row .meta{display:flex; align-items:center; gap:10px; margin-top:8px; font-size:12px; color:var(--text-muted);}
   .item-row .meta .deadline.soon{color:var(--alert); font-weight:700;}
-  .item-row.task-row{display:block;}
   .task-row-main{display:flex; align-items:center; gap:12px;}
   .task-desc{
     margin-top:10px; padding-top:10px; border-top:1px solid var(--border);
@@ -246,11 +265,35 @@
   }
   .item-row.task-row.desc-open .task-desc{display:block;}
   .task-desc a{color:var(--accent); word-break:break-all;}
+  .desc-icon{width:18px; height:18px; color:var(--text-muted); flex-shrink:0;}
+  .inline-edit-input{
+    width:100%; border:none; border-bottom:1.5px solid var(--accent); background:transparent;
+    font-family:var(--font); font-size:16px; font-weight:600; color:var(--text); outline:none; padding:0;
+  }
+  .inline-edit-textarea{
+    width:100%; border:1px solid var(--accent); border-radius:var(--radius-sm); background:var(--surface);
+    font-family:var(--font); font-size:16px; color:var(--text); outline:none; padding:8px; resize:vertical;
+  }
   .repeat-icon{width:15px;height:15px; color:var(--text-muted); flex-shrink:0;}
   .priority-icon{flex-shrink:0;}
   .priority-icon.priority-elevee{color: var(--alert);}
   .priority-icon.priority-moyenne{color: var(--gold);}
   .priority-icon.priority-faible{color: var(--text-muted);}
+
+  /* ---------- Glisser latéralement pour éditer/supprimer (catégories, projets, tâches, habitudes) ---------- */
+  .swipe-actions{
+    position:absolute; top:0; right:0; bottom:0; width:112px;
+    display:flex; align-items:center; justify-content:flex-end; gap:8px; padding-right:12px;
+    z-index:1;
+  }
+  .swipe-btn{
+    width:38px; height:38px; border-radius:50%; border:none; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; color:#fff; cursor:pointer;
+  }
+  .swipe-btn svg{width:16px;height:16px;}
+  .swipe-edit{background:var(--accent);}
+  .swipe-delete{background:var(--alert);}
+  .swipe-content{position:relative; z-index:2;}
 
   /* ---------- Quick add bar (magnetized) ---------- */
   .quick-add{
@@ -346,7 +389,7 @@
   .modal-box h3{font-size:16px; margin-bottom:16px;}
   .modal-box input[type=text], .modal-box input[type=date], .modal-box select{
     width:100%; border:1px solid var(--border); border-radius: var(--radius-sm); color:var(--text);
-    padding:10px 12px; font-size:16px; font-family:var(--font); margin-bottom:12px; outline:none; background:var(--surface);
+    padding:10px 12px; font-size:16px; font-family:var(--font); margin-bottom:12px; outline:none; background-color:var(--surface);
   }
   .modal-box textarea{
     width:100%; border:1px solid var(--border); border-radius: var(--radius-sm); color:var(--text);
@@ -453,49 +496,62 @@
   /* ---------- Habitudes ---------- */
   .habit-score-row{display:flex; align-items:center; justify-content:center; gap:10px; margin:4px 0 16px;}
   .habit-score-label{font-weight:700; font-size:13px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em;}
-  .habit-medals{display:flex; gap:6px;}
-  .medal{width:22px; height:22px; border-radius:50%; background:var(--border); display:inline-block; box-shadow: inset 0 1px 2px rgba(0,0,0,.08);}
-  .medal.filled.tier-bronze{background:#CD7F32;}
-  .medal.filled.tier-silver{background:#B7C1CC;}
-  .medal.filled.tier-gold{background:#D9A441;}
+  .habit-medals{display:flex; gap:4px;}
+  .score-star{width:24px; height:24px; color:var(--border); display:inline-block;}
+  .score-star svg{width:24px; height:24px; display:block;}
+  .score-star.filled{color:#F2C230;}
 
   .habit-filters-row{display:flex; gap:8px; margin-bottom:16px;}
   .habit-filters-row select{
     flex:1; min-width:0; border:1px solid var(--border); border-radius:var(--radius-sm);
-    padding:9px 8px; font-size:12.5px; font-weight:700; background:var(--surface-raised); color:var(--text);
+    padding:9px 8px; font-size:12.5px; font-weight:700; background-color:var(--surface-raised); color:var(--text);
   }
 
   .habit-card{
-    background:var(--surface-raised); border:1px solid var(--border); border-radius:var(--radius-lg);
-    padding:14px 16px; margin-bottom:10px;
+    position:relative; overflow:hidden; border-radius:var(--radius-lg);
+    margin-bottom:10px; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; touch-action:none;
   }
-  .habit-card.done{background:var(--accent-soft); border-color:var(--accent);}
+  .habit-card .swipe-content{
+    background:var(--surface-raised); border:1px solid var(--border); border-radius:var(--radius-lg);
+    padding:14px 16px; transition: transform .2s ease;
+  }
+  .habit-card.done .swipe-content{background:var(--accent-soft); border-color:var(--accent);}
   .habit-top{display:flex; align-items:center; gap:10px;}
-  .habit-title{flex:1; font-weight:700; font-size:15px;}
+  .habit-title{flex:1; font-weight:700; font-size:15px; min-width:0; overflow-wrap:break-word; word-break:break-word;}
   .habit-desc{font-size:12.5px; color:var(--text-muted); margin:8px 0 2px;}
+  .habit-streak-badge{
+    display:flex; align-items:center; gap:4px; flex-shrink:0;
+    font-size:16px; font-weight:800; color:#FF5F1F;
+  }
+  .habit-streak-badge svg{width:21px;height:21px;}
 
-  .habit-days-row{display:flex; align-items:center; gap:5px; margin-top:10px; flex-wrap:wrap;}
+  .habit-days-row{position:relative; display:flex; align-items:center; gap:6px; margin-top:14px;}
   .day-circle{
-    position:relative; width:23px; height:23px; border-radius:50%; flex-shrink:0;
-    display:flex; align-items:center; justify-content:center;
-    font-size:10px; font-weight:700; color:var(--text-muted); background:var(--border);
+    position:relative; flex:1; aspect-ratio:1; min-width:0; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; z-index:1;
+    font-size:11px; font-weight:700; color:var(--text-muted); background:var(--border);
   }
   .day-circle.done{background:var(--accent); color:#fff;}
   .day-circle.skipped{background:#A8D9C5; color:#fff;}
   .day-circle.today{box-shadow:0 0 0 2px var(--accent);}
-  .day-circle.connected::before{
-    content:""; position:absolute; right:100%; top:0; bottom:0; width:5px; background:#8FC4B8;
-  }
+  .day-connector{position:absolute; z-index:0; border-radius:999px;}
   .habit-streak{font-size:11px; color:var(--text-muted); text-align:right; margin-top:8px; font-weight:700;}
   .skip-btn{
     background:transparent; border:1px solid var(--border); color:var(--text-muted);
     border-radius:999px; padding:5px 12px; font-size:11px; font-weight:700; cursor:pointer; flex-shrink:0;
   }
   .skip-btn.disabled{opacity:.4; pointer-events:none;}
+  .habit-edit-days{display:flex; gap:6px; margin-bottom:16px;}
+  .habit-edit-days .day-circle{
+    flex:1; aspect-ratio:1; border:none; font-family:var(--font); cursor:pointer;
+  }
 
   .week-recap-medal{
     width:64px; height:64px; border-radius:50%; margin:4px auto 16px; background:var(--border);
   }
+  .week-recap-medal.medal.filled.tier-bronze{background:#CD7F32;}
+  .week-recap-medal.medal.filled.tier-silver{background:#B7C1CC;}
+  .week-recap-medal.medal.filled.tier-gold{background:#D9A441;}
 
   /* ---------- Réglages ---------- */
   .settings-group{margin-bottom:20px;}
@@ -505,7 +561,7 @@
   }
   .settings-group input[type=text], .settings-group select{
     width:100%; border:1px solid var(--border); border-radius:var(--radius-sm); padding:11px 12px;
-    font-size:16px; font-family:var(--font); background:var(--surface-raised); color:var(--text); outline:none;
+    font-size:16px; font-family:var(--font); background-color:var(--surface-raised); color:var(--text); outline:none;
   }
   .settings-note{font-size:12px; color:var(--text-muted); margin-top:6px; line-height:1.4;}
   .data-warning{font-style:italic; color:var(--accent); font-size:13px; line-height:1.5; margin-bottom:20px;}
@@ -557,7 +613,7 @@ const DB_VERSION = 1;
 /* Version de l'app, indépendante de la structure interne des données (DATA_SCHEMA_VERSION).
    Change-la à chaque mise à jour publiée, en même temps que CACHE_NAME dans service-worker.js
    et version.json (utilisés pour l'export et la détection de nouvelle version). */
-const APP_VERSION = "1.0.0";
+const APP_VERSION = "2.1.0";
 const DATA_SCHEMA_VERSION = 1;
 let db;
 
@@ -754,6 +810,7 @@ const STRINGS = {
     importErrorMsg: "Ce fichier ne semble pas être un export valide de Beeziday.",
     updateAvailableTitle: "Mise à jour disponible",
     updateAvailableMsg: "Une nouvelle version de Beeziday est disponible. Par précaution, pense à exporter tes données avant de mettre à jour. Pour mettre à jour : ferme complètement l'app (glisse-la vers le haut pour la fermer) puis rouvre-la.",
+    historiqueSemaine: "Jours de cette semaine (appuie pour valider/dévalider)",
     dimanche:"Dimanche", lundi:"Lundi", mardi:"Mardi", mercredi:"Mercredi", jeudi:"Jeudi", vendredi:"Vendredi", samedi:"Samedi",
     touteLaJournee: "Toute la journée", ajouterHabitude: "Ajouter une habitude", modifierHabitude: "Modifier une habitude",
     nomHabitude: "Nom de l'habitude", frequence: "Fréquence", tousLesJours: "Tous les jours", xFoisParSemaine: "X fois par semaine",
@@ -822,6 +879,7 @@ const STRINGS = {
     importErrorMsg: "This file doesn't look like a valid Beeziday export.",
     updateAvailableTitle: "Update available",
     updateAvailableMsg: "A new version of Beeziday is available. As a precaution, remember to export your data before updating. To update: fully close the app (swipe it away) then reopen it.",
+    historiqueSemaine: "This week's days (tap to check/uncheck)",
     dimanche:"Sunday", lundi:"Monday", mardi:"Tuesday", mercredi:"Wednesday", jeudi:"Thursday", vendredi:"Friday", samedi:"Saturday",
     touteLaJournee: "All day", ajouterHabitude: "Add a habit", modifierHabitude: "Edit habit",
     nomHabitude: "Habit name", frequence: "Frequency", tousLesJours: "Every day", xFoisParSemaine: "X times a week",
@@ -850,6 +908,26 @@ function themeDisplayName(theme){
   return theme.name;
 }
 
+/* Habille l'écran d'une catégorie avec sa couleur : titre, flèche retour, bouton modifier,
+   bouton + projets, cases à cocher, et la barre de saisie rapide (élément global, réinitialisé
+   au début de chaque attachScreenEvents). */
+function applyCategoryColorToScreen(root, color){
+  const backBtn = root.querySelector("#backBtn");
+  if(backBtn) backBtn.style.color = color;
+  const title = root.querySelector(".screen-title");
+  if(title) title.style.color = color;
+  const editBtn = root.querySelector("#editCatBtn") || root.querySelector("#editProjectBtn");
+  if(editBtn){ editBtn.style.color = color; editBtn.style.background = color + "26"; }
+  const addBtn = root.querySelector("#addProjectBtn");
+  if(addBtn){ addBtn.style.color = color; addBtn.style.background = color + "26"; }
+  root.querySelectorAll(".check-circle").forEach(c=>{
+    c.style.borderColor = color;
+    if(c.classList.contains("done")) c.style.background = color;
+  });
+  const qaSend = document.getElementById("quickAddSend");
+  if(qaSend) qaSend.style.background = color;
+}
+
 /* =========================================================================
    SVG ICONS (small helpers)
    ========================================================================= */
@@ -864,6 +942,10 @@ const ICONS = {
   pencil: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`,
   coffeeCup: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3c.3 1 .1 1.6-.4 2.3-.6.8-.8 1.4-.4 2.4M13.5 3c.3 1 .1 1.6-.4 2.3-.6.8-.8 1.4-.4 2.4"/><path d="M4 9h13v5.5A4.5 4.5 0 0 1 12.5 19h-4A4.5 4.5 0 0 1 4 14.5V9Z"/><path d="M17 10.5h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M3 22.5h15"/></svg>`,
   close: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>`,
+  trash: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`,
+  note: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/><path d="M14 3v5h5"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>`,
+  flame: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 1.7c.8 3.3-.6 5-2.1 6.7C8.7 10 7 12 7 14.8 7 18.8 9.9 22 13.2 22c3.9 0 7.3-2.9 7.3-7 0-2.7-1.3-4.6-2.5-6 .2 1.9-.4 3.2-1.5 3.9-.3-2.6-1.4-4.2-2.5-5.4-1-1.1-1.7-2.3-1.5-5.8Z"/></svg>`,
+  folder: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7Z"/></svg>`,
 };
 
 /* Icône de priorité : 3 barres croissantes, dont N sont remplies selon le niveau.
@@ -1343,10 +1425,15 @@ async function renderCategories(){
   <div id="catFormHolder"></div>
   <div id="catList">
     ${themes.map(t=>`
-      <div class="cat-row" style="background:${t.color}" data-cat="${t.id}">
-        <span class="cat-name">${escapeHtml(themeDisplayName(t))}</span>
-        <button class="row-edit-btn light" data-edit-cat="${t.id}" aria-label="Modifier">${ICONS.pencil}</button>
-        <span class="chev">${ICONS.chevRight}</span>
+      <div class="cat-row" data-cat="${t.id}">
+        <div class="swipe-actions">
+          <button class="swipe-btn swipe-edit" data-swipe-edit-cat="${t.id}" aria-label="Modifier">${ICONS.pencil}</button>
+          ${t.isDefault ? "" : `<button class="swipe-btn swipe-delete" data-swipe-delete-cat="${t.id}" aria-label="Supprimer">${ICONS.trash}</button>`}
+        </div>
+        <div class="swipe-content">
+          <span class="cat-name" style="color:${t.color}">${escapeHtml(themeDisplayName(t))}</span>
+          <span class="chev-circle" style="background:${t.color}">${ICONS.chevRight}</span>
+        </div>
       </div>
     `).join("")}
   </div>`;
@@ -1389,41 +1476,56 @@ async function renderCategoryDetail(themeId){
     <button class="icon-btn" id="addProjectBtn">${ICONS.plus}</button>
   </div>
   <div id="itemList">
-    ${activeItems.map(i=>renderItemRow(i)).join("") || `<div class="placeholder-msg">${tr("rienIci")}</div>`}
+    ${activeItems.map(i=>renderItemRow(i, theme?theme.color:null)).join("") || `<div class="placeholder-msg">${tr("rienIci")}</div>`}
   </div>
   ${renderDoneSection(doneItems, "cat-"+themeId)}`;
 }
 
-function renderItemRow(item){
+function renderItemRow(item, themeColor){
+  const fallbackColor = themeColor || "var(--accent)";
   if(item.kind === "project"){
     return `
     <div class="item-row" data-item="${item.id}" data-kind="project">
-      <div class="top-row">
-        <div class="p-title">${escapeHtml(item.name)}</div>
-        <div style="display:flex;align-items:center;gap:6px;">
-          ${priorityIcon(item.priority)}
-          <button class="row-edit-btn" data-edit-item="${item.id}" data-edit-kind="project" aria-label="Modifier">${ICONS.pencil}</button>
-        </div>
+      <div class="swipe-actions">
+        <button class="swipe-btn swipe-edit" data-swipe-edit-item="${item.id}" data-swipe-edit-kind="project" aria-label="Modifier">${ICONS.pencil}</button>
+        <button class="swipe-btn swipe-delete" data-swipe-delete-item="${item.id}" data-swipe-delete-kind="project" aria-label="Supprimer">${ICONS.trash}</button>
       </div>
-      <div class="meta">
-        ${item.deadline ? `<span class="deadline ${daysUntil(item.deadline)<=14 ? 'soon':''}">${formatDeadline(item.deadline)}</span>` : ""}
-        <span class="subcount" data-subcount="${item.id}">…</span>
+      <div class="swipe-content">
+        <div class="top-row">
+          <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+            <span class="folder-icon" style="color:${fallbackColor}">${ICONS.folder}</span>
+            <div class="p-title" style="color:${fallbackColor}">${escapeHtml(item.name)}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+            ${priorityIcon(item.priority)}
+            <span class="chev-circle" style="background:${fallbackColor}">${ICONS.chevRight}</span>
+          </div>
+        </div>
+        <div class="meta">
+          ${item.deadline ? `<span class="deadline ${daysUntil(item.deadline)<=14 ? 'soon':''}">${formatDeadline(item.deadline)}</span>` : ""}
+          <span class="subcount" data-subcount="${item.id}" data-subcount-color="${themeColor||''}">…</span>
+        </div>
       </div>
     </div>`;
   }
   return `
   <div class="item-row task-row" data-item="${item.id}" data-kind="task" data-has-desc="${item.description ? 1 : 0}">
-    <div class="task-row-main">
-      <div class="check-circle ${item.status==='done'?'done':''}" data-checktask="${item.id}">${ICONS.check}</div>
-      <div class="task-name">${escapeHtml(item.name)}</div>
-      ${item.recurrence && item.recurrence !== "aucune" ? `<span class="repeat-icon">${ICONS.repeat}</span>` : ""}
-      ${priorityIcon(item.priority)}
-      ${item.deadline ? `<span class="task-deadline ${daysUntil(item.deadline)<=14?'soon':''}">${formatDeadline(item.deadline)}</span>` : ""}
-      <span class="star ${item.starred?'':'off'}">${ICONS.star}</span>
-      <button class="row-edit-btn" data-edit-item="${item.id}" data-edit-kind="task" aria-label="Modifier">${ICONS.pencil}</button>
+    <div class="swipe-actions">
+      <button class="swipe-btn swipe-edit" data-swipe-edit-item="${item.id}" data-swipe-edit-kind="task" aria-label="Modifier">${ICONS.pencil}</button>
+      <button class="swipe-btn swipe-delete" data-swipe-delete-item="${item.id}" data-swipe-delete-kind="task" aria-label="Supprimer">${ICONS.trash}</button>
     </div>
-    ${item.description ? `<div class="task-desc">${linkify(item.description)}</div>` : ""}
-  </div>`;
+    <div class="swipe-content">
+      <div class="task-row-main">
+        <div class="check-circle ${item.status==='done'?'done':''}" data-checktask="${item.id}">${ICONS.check}</div>
+        <div class="task-name" data-inline-name="${item.id}">${escapeHtml(item.name)}</div>
+        ${item.description ? `<span class="desc-icon" style="color:${fallbackColor}">${ICONS.note}</span>` : ""}
+        ${item.recurrence && item.recurrence !== "aucune" ? `<span class="repeat-icon">${ICONS.repeat}</span>` : ""}
+        ${priorityIcon(item.priority)}
+        ${item.deadline ? `<span class="task-deadline ${daysUntil(item.deadline)<=14?'soon':''}">${formatDeadline(item.deadline)}</span>` : ""}
+        <span class="star ${item.starred?'':'off'}">${ICONS.star}</span>
+      </div>
+      ${item.description ? `<div class="task-desc" data-inline-desc="${item.id}">${linkify(item.description)}</div>` : ""}
+    </div>  </div>`;
 }
 
 /* Section "Terminé" repliable, affichée sous une liste de tâches actives */
@@ -1442,11 +1544,13 @@ function renderDoneSection(doneItems, ctxKey){
 async function fillSubcounts(root){
   root.querySelectorAll("[data-subcount]").forEach(async el=>{
     const pid = el.dataset.subcount;
+    const color = el.dataset.subcountColor;
     const subs = await getSubtasks(pid);
     const done = subs.filter(s=>s.status==="done").length;
     el.innerHTML = tr("tachesCount", done, subs.length);
     if(subs.length){
-      el.insertAdjacentHTML("afterend", `<div class="progress-track" style="flex:1;margin-top:0"><div class="progress-fill" style="width:${Math.round(done/subs.length*100)}%"></div></div>`);
+      const fillStyle = `width:${Math.round(done/subs.length*100)}%${color?`;background:${color}`:''}`;
+      el.insertAdjacentHTML("afterend", `<div class="progress-track" style="flex:1;margin-top:0"><div class="progress-fill" style="${fillStyle}"></div></div>`);
     }
   });
 }
@@ -1793,6 +1897,67 @@ async function computeWeekScoreForDates(weekDatesISOs){
   return Math.max(0, Math.min(3, Math.round((done/expected)*3)));
 }
 
+/* Dégradé du connecteur : plus la série de jours validés est longue, plus il tire vers un vert
+   pomme "peps" ; une série courte reste dans un vert forêt clair plus discret. */
+function habitConnectorGradient(){
+  const theme = document.body.className.replace("theme-", "") || "light";
+  // Dégradé complet (vert clair → jaune, en passant naturellement par du vert pomme via
+  // l'interpolation RGB) sur toute la largeur de chaque barre, adapté par thème :
+  // - clair : vert forêt clair vers jaune "étoile"
+  // - sombre : plus mat/désaturé pour ne pas vibrer contre le vert des ronds
+  // - crème : plus clair qu'avant, kaki vers jaune
+  const PAIRS = {
+    light: [[152,205,178],[242,194,48]],
+    dark:  [[176,176,168],[224,138,64]],
+    cream: [[205,200,155],[232,196,110]],
+  };
+  const [start, end] = PAIRS[theme] || PAIRS.light;
+  return `linear-gradient(90deg, rgb(${start.join(',')}), rgb(${end.join(',')}))`;
+}
+
+/* Pose, derrière les ronds (pas seulement entre eux), une barre continue pour chaque série de
+   jours validés consécutifs. Recalculé après chaque rendu car la largeur des ronds est flexible
+   (ils remplissent toute la largeur de la boîte, leur taille dépend donc du nombre de jours). */
+function layoutHabitConnectors(root){
+  root.querySelectorAll(".habit-days-row").forEach(row=>{
+    row.querySelectorAll(".day-connector").forEach(el=>el.remove());
+    const circles = [...row.querySelectorAll(".day-circle")];
+    if(circles.length < 2) return;
+    const filled = circles.map(c=>c.classList.contains("done") || c.classList.contains("skipped"));
+    // Encouragement : si aujourd'hui n'est pas encore validé mais que la veille l'est,
+    // on prolonge visuellement le trait jusqu'à aujourd'hui (sans changer l'état réel du rond).
+    // Dès que le lendemain arrive, "today" se déplace et cette extension ne s'applique plus ici.
+    const visual = [...filled];
+    circles.forEach((c,i)=>{
+      if(c.classList.contains("today") && !filled[i] && i>0 && filled[i-1]) visual[i] = true;
+    });
+    const rowRect = row.getBoundingClientRect();
+    let i = 0;
+    while(i < circles.length){
+      if(!visual[i]){ i++; continue; }
+      let j = i;
+      while(j+1 < circles.length && visual[j+1]) j++;
+      if(j > i){
+        const r1 = circles[i].getBoundingClientRect();
+        const r2 = circles[j].getBoundingClientRect();
+        const bar = document.createElement("div");
+        bar.className = "day-connector";
+        // Bord gauche du premier rond jusqu'au bord droit du dernier, pour un trait continu
+        // qui passe derrière les ronds plutôt que de s'arrêter entre eux.
+        const left = r1.left - rowRect.left;
+        const right = (r2.left + r2.width) - rowRect.left;
+        bar.style.left = left + "px";
+        bar.style.width = Math.max(right - left, 0) + "px";
+        bar.style.height = r1.height + "px";
+        bar.style.top = (r1.top - rowRect.top) + "px";
+        bar.style.background = habitConnectorGradient();
+        row.insertBefore(bar, row.firstChild);
+      }
+      i = j + 1;
+    }
+  });
+}
+
 /* Une habitude est "faite maintenant" si aujourd'hui est rempli (quotidienne) ou si l'objectif
    de la semaine est atteint (hebdomadaire) — un jour "skip" compte comme fait. */
 function isHabitDoneNow(h, todayISO, weekDatesISOs){
@@ -1808,7 +1973,7 @@ function renderHabitCard(h, todayISO, weekDatesISOs, weekStartDay, allowSkip){
   const completions = h.completions || {};
   const checkedToday = !!completions[todayISO];
   const doneNow = isHabitDoneNow(h, todayISO, weekDatesISOs);
-  let circlesHtml, streakLabel;
+  let circlesHtml, streak;
 
   if(h.frequency === "hebdomadaire"){
     const n = h.timesPerWeek || 1;
@@ -1817,29 +1982,23 @@ function renderHabitCard(h, todayISO, weekDatesISOs, weekStartDay, allowSkip){
       const idx = i+1;
       const isFilled = idx <= count;
       const isSkip = isFilled && completions[weekDatesISOs[idx-1]] === "skip";
-      const prevFilled = i>0 && i <= count;
       const cls = ["day-circle"];
       if(isFilled) cls.push(isSkip ? "skipped" : "done");
-      if(isFilled && prevFilled) cls.push("connected");
       return `<div class="${cls.join(' ')}"><span>${idx}</span></div>`;
     }).join("");
-    const streak = computeWeeklyStreak(h, weekStartDay);
-    streakLabel = tr("semainesAffilee", streak);
+    streak = computeWeeklyStreak(h, weekStartDay);
   } else {
     circlesHtml = weekDatesISOs.map((iso,i)=>{
       const d = parseISODate(iso);
       const val = completions[iso];
       const isFilled = !!val;
       const isToday = iso === todayISO;
-      const prevFilled = i>0 && !!completions[weekDatesISOs[i-1]];
       const cls = ["day-circle"];
       if(isFilled) cls.push(val === "skip" ? "skipped" : "done");
       if(isToday) cls.push("today");
-      if(isFilled && prevFilled) cls.push("connected");
       return `<div class="${cls.join(' ')}"><span>${DAY_LETTER[d.getDay()]}</span></div>`;
     }).join("");
-    const streak = computeDailyStreak(h, todayISO);
-    streakLabel = tr("joursAffilee", streak);
+    streak = computeDailyStreak(h, todayISO);
   }
 
   const descKey = {faible:"descFaible", normale:"descNormale", elevee:"descElevee"}[state.habitsEnergyLevel] || "descNormale";
@@ -1848,15 +2007,20 @@ function renderHabitCard(h, todayISO, weekDatesISOs, weekStartDay, allowSkip){
 
   return `
   <div class="habit-card ${doneNow?'done':''}" data-habit="${h.id}">
-    <div class="habit-top">
-      <div class="check-circle ${checkedToday?'done':''}" data-checkhabit="${h.id}">${ICONS.check}</div>
-      <div class="habit-title">${escapeHtml(h.name)}</div>
-      ${allowSkip && !checkedToday ? `<button class="skip-btn ${skipUsedThisWeek?'disabled':''}" data-skip-habit="${h.id}">${tr("passer")}</button>` : ""}
-      <button class="row-edit-btn" data-edit-habit="${h.id}" aria-label="Modifier">${ICONS.pencil}</button>
+    <div class="swipe-actions">
+      <button class="swipe-btn swipe-edit" data-swipe-edit-habit="${h.id}" aria-label="Modifier">${ICONS.pencil}</button>
+      <button class="swipe-btn swipe-delete" data-swipe-delete-habit="${h.id}" aria-label="Supprimer">${ICONS.trash}</button>
     </div>
-    ${desc ? `<p class="habit-desc">${escapeHtml(desc)}</p>` : ""}
-    <div class="habit-days-row">${circlesHtml}</div>
-    <div class="habit-streak">${streakLabel}</div>
+    <div class="swipe-content">
+      <div class="habit-top">
+        <div class="check-circle ${checkedToday?'done':''}" data-checkhabit="${h.id}">${ICONS.check}</div>
+        <div class="habit-title">${escapeHtml(h.name)}</div>
+        ${allowSkip && !checkedToday ? `<button class="skip-btn ${skipUsedThisWeek?'disabled':''}" data-skip-habit="${h.id}">${tr("passer")}</button>` : ""}
+        <div class="habit-streak-badge">${ICONS.flame}${streak}</div>
+      </div>
+      ${desc ? `<p class="habit-desc">${escapeHtml(desc)}</p>` : ""}
+      <div class="habit-days-row">${circlesHtml}</div>
+    </div>
   </div>`;
 }
 
@@ -1872,7 +2036,6 @@ async function renderHabitudes(){
   if(!state.habitsEnergyLevel) state.habitsEnergyLevel = "normale";
 
   const score = await computeWeekScoreForDates(weekDatesISOs);
-  const scoreTier = score===1?"bronze":score===2?"silver":score===3?"gold":"";
 
   const filtered = habits.filter(h=>{
     if(state.habitsMomentFilter === "toutes") return true;
@@ -1898,7 +2061,7 @@ async function renderHabitudes(){
   <div class="habit-score-row">
     <span class="habit-score-label">${tr("score")}</span>
     <div class="habit-medals">
-      ${[1,2,3].map(n=>`<span class="medal ${n<=score?'filled tier-'+scoreTier:''}"></span>`).join("")}
+      ${[1,2,3].map(n=>`<span class="score-star ${n<=score?'filled':''}">${ICONS.star}</span>`).join("")}
     </div>
   </div>
   <div class="habit-filters-row">
@@ -1920,10 +2083,20 @@ async function renderHabitudes(){
 /* ---- Modale habitude ---- */
 let habitModalContext = null;
 
-function habitFormHtml(existing){
+function habitFormHtml(existing, weekDatesISOs){
   return `
   <h3>${existing ? tr("modifierHabitude") : tr("ajouterHabitude")}</h3>
   <input type="text" id="hName" placeholder="${tr("nomHabitude")}" value="${existing?escapeHtml(existing.name):""}">
+  ${existing ? `
+  <label>${tr("historiqueSemaine")}</label>
+  <div class="habit-edit-days" id="habitEditDays">
+    ${weekDatesISOs.map(iso=>{
+      const val = existing.completions && existing.completions[iso];
+      const d = parseISODate(iso);
+      return `<button type="button" class="day-circle ${val ? (val==='skip'?'skipped':'done') : ''}" data-toggle-day="${iso}">${DAY_LETTER[d.getDay()]}</button>`;
+    }).join("")}
+  </div>
+  ` : ``}
   <label>${tr("frequence")}</label>
   <select id="hFrequency">
     <option value="quotidienne">${tr("tousLesJours")}</option>
@@ -1955,9 +2128,11 @@ function habitFormHtml(existing){
   </div>`;
 }
 
-function openHabitModal(existing){
+async function openHabitModal(existing){
   habitModalContext = {existing};
-  openModal(habitFormHtml(existing));
+  const settings = Object.fromEntries((await idbGetAll("settings")).map(s=>[s.key,s.value]));
+  const weekDatesISOs = getWeekDates(0, settings.weekStart ?? 1).map(toISODate);
+  openModal(habitFormHtml(existing, weekDatesISOs));
 
   const freqSelect = document.getElementById("hFrequency");
   const timesWrap = document.getElementById("hTimesWrap");
@@ -1968,6 +2143,23 @@ function openHabitModal(existing){
   freqSelect.addEventListener("change", ()=>{
     timesWrap.style.display = freqSelect.value === "hebdomadaire" ? "block" : "none";
   });
+
+  if(existing){
+    document.querySelectorAll("#habitEditDays [data-toggle-day]").forEach(btn=>{
+      btn.addEventListener("click", async ()=>{
+        const iso = btn.dataset.toggleDay;
+        const habit = (await idbGetAll("habits")).find(h=>h.id===existing.id);
+        if(!habit) return;
+        habit.completions = habit.completions || {};
+        if(habit.completions[iso]) delete habit.completions[iso];
+        else habit.completions[iso] = true;
+        await idbPut("habits", habit);
+        existing.completions = habit.completions;
+        btn.classList.remove("done","skipped");
+        if(habit.completions[iso]) btn.classList.add("done");
+      });
+    });
+  }
 
   document.getElementById("hCancel").addEventListener("click", closeModal);
   document.getElementById("hSave").addEventListener("click", saveHabitModal);
@@ -2042,6 +2234,10 @@ async function checkWeekRollover(){
 let updateNoticeShownFor = null;
 async function checkForNewVersion(){
   try{
+    if("serviceWorker" in navigator){
+      const reg = await navigator.serviceWorker.getRegistration();
+      if(reg) reg.update();
+    }
     const res = await fetch("version.json", {cache:"no-store"});
     if(!res.ok) return;
     const data = await res.json();
@@ -2162,6 +2358,10 @@ async function renderReglages(){
    Interroger document.getElementById risquerait d'attraper le mauvais élément.
    ========================================================================= */
 function attachScreenEvents(screenName, root){
+  // Remis à zéro à chaque écran ; seul catDetail la réapplique dans sa propre couleur.
+  const qaSend = document.getElementById("quickAddSend");
+  if(qaSend) qaSend.style.background = "";
+
   if(screenName === "dashboard"){
     const chooseBtn = root.querySelector("#chooseCatBtn");
     if(chooseBtn) chooseBtn.addEventListener("click", openThemePickerModal);
@@ -2237,17 +2437,26 @@ function attachScreenEvents(screenName, root){
     root.querySelectorAll(".cat-row").forEach(row=>{
       row.addEventListener("click", (e)=>{
         if(row.classList.contains("dragging")) return;
+        if(row.classList.contains("swiped-open")){ closeSwipeRow(row); return; }
         pushScreen({screen:"catDetail", themeId: row.dataset.cat});
       });
     });
-    root.querySelectorAll("[data-edit-cat]").forEach(btn=>{
-      btn.addEventListener("click", async (e)=>{
-        e.stopPropagation();
-        const theme = (await idbGetAll("themes")).find(t=>t.id===btn.dataset.editCat);
+    makeDraggable(root, "#catList", ".cat-row", "themes", {
+      onEdit: async (id)=>{
+        const theme = (await idbGetAll("themes")).find(t=>t.id===id);
         if(theme) openCatEditModal(theme);
-      });
+      },
+      onDelete: async (id)=>{
+        const theme = (await idbGetAll("themes")).find(t=>t.id===id);
+        if(!theme || theme.isDefault) return;
+        const projects = await idbGetAll("projects");
+        const tasks = await idbGetAll("tasks");
+        for(const p of projects) if(p.themeId===id){ p.themeId="default"; await idbPut("projects", p); }
+        for(const t of tasks) if(t.themeId===id){ t.themeId="default"; await idbPut("tasks", t); }
+        await idbDelete("themes", id);
+        renderStack();
+      }
     });
-    makeDraggable(root, "#catList", ".cat-row", "themes");
   }
 
   if(screenName === "catDetail"){
@@ -2262,10 +2471,30 @@ function attachScreenEvents(screenName, root){
       const theme = (await idbGetAll("themes")).find(t=>t.id===themeId);
       if(theme) openCatEditModal(theme);
     });
+    (async ()=>{
+      const themeId = state.stack[state.stack.length-1].themeId;
+      const theme = (await idbGetAll("themes")).find(t=>t.id===themeId);
+      if(theme) applyCategoryColorToScreen(root, theme.color);
+    })();
     attachItemRowEvents(root);
     attachDoneSectionEvents(root);
     fillSubcounts(root);
-    makeDraggable(root, "#itemList", ".item-row", "mixed");
+    makeDraggable(root, "#itemList", ".item-row", "mixed", {
+      onEdit: async (id, kind)=>{
+        const store = kind === "project" ? "projects" : "tasks";
+        const obj = (await idbGetAll(store)).find(x=>x.id===id);
+        if(obj) openItemModal(kind, obj, {});
+      },
+      onDelete: async (id, kind)=>{
+        const store = kind === "project" ? "projects" : "tasks";
+        if(kind === "project"){
+          const subs = await getSubtasks(id);
+          for(const s of subs) await idbDelete("tasks", s.id);
+        }
+        await idbDelete(store, id);
+        renderStack();
+      }
+    });
   }
 
   if(screenName === "projectDetail"){
@@ -2276,9 +2505,26 @@ function attachScreenEvents(screenName, root){
       const project = (await idbGetAll("projects")).find(p=>p.id===projectId);
       if(project) openItemModal("project", project, {});
     });
+    (async ()=>{
+      const projectId = state.stack[state.stack.length-1].projectId;
+      const project = (await idbGetAll("projects")).find(p=>p.id===projectId);
+      if(project){
+        const theme = (await idbGetAll("themes")).find(t=>t.id===project.themeId);
+        if(theme) applyCategoryColorToScreen(root, theme.color);
+      }
+    })();
     attachItemRowEvents(root);
     attachDoneSectionEvents(root);
-    makeDraggable(root, "#itemList", ".item-row", "tasks");
+    makeDraggable(root, "#itemList", ".item-row", "tasks", {
+      onEdit: async (id)=>{
+        const obj = (await idbGetAll("tasks")).find(x=>x.id===id);
+        if(obj) openItemModal("task", obj, {});
+      },
+      onDelete: async (id)=>{
+        await idbDelete("tasks", id);
+        renderStack();
+      }
+    });
   }
 
   if(screenName === "plages"){
@@ -2333,7 +2579,8 @@ function attachScreenEvents(screenName, root){
       renderStack();
     });
     root.querySelectorAll("[data-checkhabit]").forEach(el=>{
-      el.addEventListener("click", async ()=>{
+      el.addEventListener("click", async (e)=>{
+        e.stopPropagation();
         const id = el.dataset.checkhabit;
         const habit = (await idbGetAll("habits")).find(h=>h.id===id);
         if(habit){
@@ -2346,14 +2593,9 @@ function attachScreenEvents(screenName, root){
         }
       });
     });
-    root.querySelectorAll("[data-edit-habit]").forEach(btn=>{
-      btn.addEventListener("click", async ()=>{
-        const habit = (await idbGetAll("habits")).find(h=>h.id===btn.dataset.editHabit);
-        if(habit) openHabitModal(habit);
-      });
-    });
     root.querySelectorAll("[data-skip-habit]").forEach(btn=>{
-      btn.addEventListener("click", async ()=>{
+      btn.addEventListener("click", async (e)=>{
+        e.stopPropagation();
         if(btn.classList.contains("disabled")) return;
         const id = btn.dataset.skipHabit;
         const habit = (await idbGetAll("habits")).find(h=>h.id===id);
@@ -2369,6 +2611,17 @@ function attachScreenEvents(screenName, root){
         renderStack();
       });
     });
+    makeSwipeOnly(root, ".habit-card", {
+      onEdit: async (id)=>{
+        const habit = (await idbGetAll("habits")).find(h=>h.id===id);
+        if(habit) openHabitModal(habit);
+      },
+      onDelete: async (id)=>{
+        await idbDelete("habits", id);
+        renderStack();
+      }
+    });
+    layoutHabitConnectors(root);
   }
 
   if(screenName === "reglages"){
@@ -2487,23 +2740,89 @@ function attachItemRowEvents(root){
   root.querySelectorAll('.item-row[data-kind="project"]').forEach(row=>{
     row.addEventListener("click", ()=>{
       if(row.classList.contains("dragging")) return;
+      if(row.classList.contains("swiped-open")){ closeSwipeRow(row); return; }
       pushScreen({screen:"projectDetail", projectId: row.dataset.item});
-    });
-  });
-  root.querySelectorAll("[data-edit-item]").forEach(btn=>{
-    btn.addEventListener("click", async (e)=>{
-      e.stopPropagation();
-      const id = btn.dataset.editItem, kind = btn.dataset.editKind;
-      const store = kind === "project" ? "projects" : "tasks";
-      const obj = (await idbGetAll(store)).find(x=>x.id===id);
-      if(obj) openItemModal(kind, obj, {});
     });
   });
   root.querySelectorAll('.item-row[data-kind="task"][data-has-desc="1"]').forEach(row=>{
     row.addEventListener("click", ()=>{
       if(row.classList.contains("dragging")) return;
+      if(row.classList.contains("swiped-open")){ closeSwipeRow(row); return; }
       row.classList.toggle("desc-open");
     });
+  });
+  root.querySelectorAll("[data-inline-name]").forEach(nameEl=>{
+    nameEl.addEventListener("click", (e)=>{
+      const row = nameEl.closest(".item-row");
+      const hasDesc = row && row.dataset.hasDesc === "1";
+      if(hasDesc && !row.classList.contains("desc-open")){
+        // Laisse le clic remonter au gestionnaire de la ligne, qui déplie la description.
+        return;
+      }
+      e.stopPropagation();
+      startInlineNameEdit(nameEl, nameEl.dataset.inlineName);
+    });
+  });
+  root.querySelectorAll("[data-inline-desc]").forEach(descEl=>{
+    descEl.addEventListener("click", (e)=>{
+      if(e.target.closest("a")) return; // laisser les liens s'ouvrir normalement
+      e.stopPropagation();
+      startInlineDescEdit(descEl, descEl.dataset.inlineDesc);
+    });
+  });
+}
+
+function startInlineNameEdit(nameEl, taskId){
+  if(nameEl.querySelector("input")) return;
+  const original = nameEl.textContent;
+  nameEl.textContent = "";
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "inline-edit-input";
+  input.value = original;
+  nameEl.appendChild(input);
+  input.focus();
+  input.select();
+  let done = false;
+  const commit = async ()=>{
+    if(done) return;
+    done = true;
+    const val = input.value.trim();
+    if(val && val !== original){
+      const task = (await idbGetAll("tasks")).find(t=>t.id===taskId);
+      if(task){ task.name = val; await idbPut("tasks", task); }
+    }
+    renderStack();
+  };
+  input.addEventListener("blur", commit);
+  input.addEventListener("keydown", (ev)=>{
+    if(ev.key === "Enter") input.blur();
+    if(ev.key === "Escape"){ done = true; renderStack(); }
+  });
+}
+
+function startInlineDescEdit(descEl, taskId){
+  if(descEl.querySelector("textarea")) return;
+  const original = descEl.textContent;
+  descEl.innerHTML = "";
+  const textarea = document.createElement("textarea");
+  textarea.className = "inline-edit-textarea";
+  textarea.value = original;
+  textarea.rows = 3;
+  descEl.appendChild(textarea);
+  textarea.focus();
+  let done = false;
+  const commit = async ()=>{
+    if(done) return;
+    done = true;
+    const val = textarea.value.trim();
+    const task = (await idbGetAll("tasks")).find(t=>t.id===taskId);
+    if(task){ task.description = val; await idbPut("tasks", task); }
+    renderStack();
+  };
+  textarea.addEventListener("blur", commit);
+  textarea.addEventListener("keydown", (ev)=>{
+    if(ev.key === "Escape"){ done = true; renderStack(); }
   });
 }
 
@@ -2761,80 +3080,201 @@ async function openThemePickerModal(){
 /* =========================================================================
    Drag & drop reorder (pointer-based, touch friendly)
    ========================================================================= */
-function makeDraggable(root, listSelector, itemSelector, storeKind){
-  const list = root.querySelector(listSelector);
-  if(!list) return;
+function closeSwipeRow(row){
+  const content = row.querySelector(".swipe-content");
+  if(content){
+    content.style.transition = "transform .2s ease";
+    content.style.transform = "translateX(0)";
+  }
+  row.classList.remove("swiped-open");
+}
+function closeOtherSwipes(exceptRow){
+  document.querySelectorAll(".swiped-open").forEach(row=>{
+    if(row !== exceptRow) closeSwipeRow(row);
+  });
+}
 
-  list.querySelectorAll(itemSelector).forEach(item=>{
+const SWIPE_REVEAL_PX = 112;
+
+/* Version simplifiée, glissement latéral uniquement (pas de réordonnancement vertical) —
+   utilisée pour les habitudes, qui ne sont pas réordonnables. */
+function makeSwipeOnly(root, itemSelector, handlers){
+  const DECIDE_PX = 10;
+  root.querySelectorAll(itemSelector).forEach(item=>{
+    const content = item.querySelector(".swipe-content");
+    if(!content) return;
     item.addEventListener("pointerdown", (e)=>{
-      // ignore drags starting on interactive controls
-      if(e.target.closest("[data-checktask]") || e.target.closest("select") || e.target.closest("[data-edit-item]") || e.target.closest("[data-edit-cat]") || e.target.closest(".task-desc")) return;
-      startDrag(item, e.pointerId, e.clientY);
+      if(e.target.closest("[data-checkhabit]") || e.target.closest(".swipe-btn") || e.target.closest("[data-skip-habit]")) return;
+      startSwipe(item, content, e.pointerId, e.clientX, e.clientY);
     });
   });
 
-  /* Réordonnancement "virtuel" basé sur un calcul d'index (distance parcourue ÷ hauteur de ligne),
-     plutôt que sur la mesure en direct des positions des voisins. Mesurer un voisin pendant que sa
-     propre transition CSS est en cours renvoie une position qui bouge encore, ce qui provoquait
-     l'oscillation. Ici, tout est calculé une seule fois au départ, donc rien ne peut s'emballer.
-     On écoute aussi document (pas l'élément lui-même) pour ne jamais perdre le geste en cours.
-     Le glisser-déposer ne s'active qu'après 1s de pression immobile (LONG_PRESS_MS) : un mouvement
-     franc avant ce délai est interprété comme une intention de faire défiler la page, et on laisse
-     alors le scroll natif (touch-action:pan-y) prendre le relais normalement. */
-  const LONG_PRESS_MS = 1000;
-  const MOVE_CANCEL_PX = 10;
+  function startSwipe(item, content, pointerId, downX, downY){
+    let mode = null;
+    let lastY = downY;
+    const baseX = item.classList.contains("swiped-open") ? -SWIPE_REVEAL_PX : 0;
 
-  function startDrag(item, pointerId, downY){
-    const startY = downY;
-    let dragging = false;
-    let canceled = false;
+    function onMove(e){
+      if(e.pointerId !== pointerId) return;
+      const dx = e.clientX - downX, dy = e.clientY - downY;
+      if(mode === null){
+        const movedEnough = Math.abs(dx) > DECIDE_PX || Math.abs(dy) > DECIDE_PX;
+        if(!movedEnough) return;
+        if(Math.abs(dy) >= Math.abs(dx)){ mode = "scrolling"; }
+        else { mode = "horizontal"; content.style.transition = "none"; }
+      }
+      e.preventDefault();
+      if(mode === "scrolling"){
+        const appEl = document.getElementById("app");
+        if(appEl) appEl.scrollTop -= (e.clientY - lastY);
+        lastY = e.clientY;
+        return;
+      }
+      const next = Math.min(0, Math.max(-SWIPE_REVEAL_PX, baseX + dx));
+      content.style.transform = `translateX(${next}px)`;
+    }
+    function finish(e){
+      if(e && e.pointerId !== pointerId) return;
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", finish);
+      document.removeEventListener("pointercancel", finish);
+      if(mode === "horizontal"){
+        content.style.transition = "transform .2s ease";
+        const dx = (e && e.clientX != null ? e.clientX : downX) - downX;
+        const next = baseX + dx;
+        if(next < -SWIPE_REVEAL_PX/2){
+          closeOtherSwipes(item);
+          content.style.transform = `translateX(-${SWIPE_REVEAL_PX}px)`;
+          item.classList.add("swiped-open");
+        } else {
+          content.style.transform = "translateX(0)";
+          item.classList.remove("swiped-open");
+        }
+      }
+    }
+    document.addEventListener("pointermove", onMove, {passive:false});
+    document.addEventListener("pointerup", finish);
+    document.addEventListener("pointercancel", finish);
+  }
+
+  root.querySelectorAll("[data-swipe-edit-habit]").forEach(btn=>{
+    btn.addEventListener("click", (e)=>{
+      e.stopPropagation();
+      handlers.onEdit(btn.dataset.swipeEditHabit);
+      closeSwipeRow(btn.closest(".habit-card"));
+    });
+  });
+  root.querySelectorAll("[data-swipe-delete-habit]").forEach(btn=>{
+    btn.addEventListener("click", (e)=>{
+      e.stopPropagation();
+      handlers.onDelete(btn.dataset.swipeDeleteHabit);
+    });
+  });
+}
+
+/* Réordonnancement vertical (appui long 1s) ET glissement latéral (éditer/supprimer) réunis dans
+   UN SEUL système de geste par élément — les gérer séparément créait des écouteurs concurrents
+   qui se marchaient dessus. Chaque pointerdown ouvre une "session" qui, au premier mouvement net,
+   choisit UNE fois pour toutes entre : scroll natif (vertical, on ne touche à rien), glisser pour
+   réordonner (vertical, après 1s d'immobilité), ou glissement latéral (horizontal, si swipeHandlers
+   est fourni). */
+function makeDraggable(root, listSelector, itemSelector, storeKind, swipeHandlers){
+  const list = root.querySelector(listSelector);
+  if(!list) return;
+
+  const LONG_PRESS_MS = 1000;
+  const DECIDE_PX = 10;
+
+  list.querySelectorAll(itemSelector).forEach(item=>{
+    const content = item.querySelector(".swipe-content");
+    item.addEventListener("pointerdown", (e)=>{
+      if(e.target.closest("[data-checktask]") || e.target.closest("select") || e.target.closest(".swipe-btn")) return;
+      startGesture(item, content, e.pointerId, e.clientX, e.clientY);
+    });
+  });
+
+  function startGesture(item, content, pointerId, downX, downY){
+    let mode = null; // null | "vertical" | "horizontal" | "scrolling"
+    let lastY = downY;
+    const baseX = item.classList.contains("swiped-open") ? -SWIPE_REVEAL_PX : 0;
 
     const itemsInitial = [...list.querySelectorAll(itemSelector)];
     const startIndex = itemsInitial.indexOf(item);
     let order = [...itemsInitial];
-
     const style = getComputedStyle(item);
     const rowHeight = item.offsetHeight + (parseFloat(style.marginBottom) || 0);
 
-    function activate(){
-      if(canceled) return;
-      dragging = true;
+    function activateVertical(){
+      if(mode !== null) return;
+      mode = "vertical";
       item.classList.add("dragging");
       item.style.zIndex = 10;
     }
-
-    const holdTimer = setTimeout(activate, LONG_PRESS_MS);
+    const holdTimer = setTimeout(activateVertical, LONG_PRESS_MS);
 
     function onMove(e){
       if(e.pointerId !== pointerId) return;
-      const dy = e.clientY - startY;
+      const dx = e.clientX - downX;
+      const dy = e.clientY - downY;
 
-      if(!dragging){
-        // Avant activation : un vrai mouvement = intention de scroll, on annule proprement.
-        if(Math.abs(dy) > MOVE_CANCEL_PX){
-          canceled = true;
+      if(mode === null){
+        const movedEnough = Math.abs(dx) > DECIDE_PX || Math.abs(dy) > DECIDE_PX;
+        if(!movedEnough) return;
+        if(Math.abs(dy) >= Math.abs(dx)){
+          // Intention de scroll : les lignes bloquent le pan natif (touch-action:none, nécessaire
+          // pour que le drag vertical fonctionne de façon fiable), donc on fait défiler #app
+          // nous-mêmes pour que ça continue à scroller normalement.
           clearTimeout(holdTimer);
-          finish(e);
+          mode = "scrolling";
+        } else if(swipeHandlers && content){
+          clearTimeout(holdTimer);
+          mode = "horizontal";
+          content.style.transition = "none";
+        } else {
+          return; // mouvement horizontal mais pas de swipe dispo ici : on attend le hold vertical
         }
+      }
+
+      if(mode === "scrolling"){
+        e.preventDefault();
+        const appEl = document.getElementById("app");
+        if(appEl) appEl.scrollTop -= (e.clientY - lastY);
+        lastY = e.clientY;
         return;
       }
 
-      e.preventDefault();
-      item.style.transform = `translateY(${dy}px)`;
+      if(mode === "horizontal"){
+        e.preventDefault();
+        const next = Math.min(0, Math.max(-SWIPE_REVEAL_PX, baseX + dx));
+        content.style.transform = `translateX(${next}px)`;
+        return;
+      }
 
-      const shift = Math.round(dy / rowHeight);
-      const targetIndex = Math.min(Math.max(startIndex + shift, 0), itemsInitial.length - 1);
-      const currentIndex = order.indexOf(item);
-
-      if(targetIndex !== currentIndex){
-        order.splice(currentIndex, 1);
-        order.splice(targetIndex, 0, item);
-        itemsInitial.forEach((el, originalIdx)=>{
-          if(el === item) return;
-          const newIdx = order.indexOf(el);
-          const offset = (newIdx - originalIdx) * rowHeight;
-          el.style.transform = offset ? `translateY(${offset}px)` : "";
-        });
+      if(mode === "vertical"){
+        e.preventDefault();
+        item.style.transform = `translateY(${dy}px)`;
+        const shift = Math.round(dy / rowHeight);
+        const targetIndex = Math.min(Math.max(startIndex + shift, 0), itemsInitial.length - 1);
+        const currentIndex = order.indexOf(item);
+        if(targetIndex !== currentIndex){
+          order.splice(currentIndex, 1);
+          order.splice(targetIndex, 0, item);
+          itemsInitial.forEach((el, originalIdx)=>{
+            if(el === item) return;
+            const newIdx = order.indexOf(el);
+            const offset = (newIdx - originalIdx) * rowHeight;
+            el.style.transform = offset ? `translateY(${offset}px)` : "";
+          });
+        }
+        // Défilement automatique près des bords : sans ça, descendre un élément vers le bas
+        // de l'écran semblait "ne rien faire" dès qu'on atteignait le bord visible.
+        const appEl = document.getElementById("app");
+        if(appEl){
+          const rect = appEl.getBoundingClientRect();
+          const EDGE = 70;
+          if(e.clientY < rect.top + EDGE) appEl.scrollTop -= 14;
+          else if(e.clientY > rect.bottom - EDGE) appEl.scrollTop += 14;
+        }
       }
     }
 
@@ -2845,19 +3285,51 @@ function makeDraggable(root, listSelector, itemSelector, storeKind){
       document.removeEventListener("pointerup", finish);
       document.removeEventListener("pointercancel", finish);
 
-      if(dragging){
+      if(mode === "vertical"){
         // Applique l'ordre final au vrai DOM. Comme le transform de chaque ligne représentait déjà
         // exactement sa position finale, l'enlever juste après ne produit aucun saut visuel.
         order.forEach(el=> list.appendChild(el));
         itemsInitial.forEach(el=>{ el.style.transform = ""; el.style.zIndex = ""; });
         item.classList.remove("dragging");
         persistOrder(list, itemSelector, storeKind);
+      } else if(mode === "horizontal"){
+        content.style.transition = "transform .2s ease";
+        const dx = (e && e.clientX != null ? e.clientX : downX) - downX;
+        const next = baseX + dx;
+        if(next < -SWIPE_REVEAL_PX/2){
+          closeOtherSwipes(item);
+          content.style.transform = `translateX(-${SWIPE_REVEAL_PX}px)`;
+          item.classList.add("swiped-open");
+        } else {
+          content.style.transform = "translateX(0)";
+          item.classList.remove("swiped-open");
+        }
       }
     }
 
     document.addEventListener("pointermove", onMove, {passive:false});
     document.addEventListener("pointerup", finish);
     document.addEventListener("pointercancel", finish);
+  }
+
+  if(swipeHandlers){
+    root.querySelectorAll("[data-swipe-edit-item], [data-swipe-edit-cat]").forEach(btn=>{
+      btn.addEventListener("click", (e)=>{
+        e.stopPropagation();
+        const id = btn.dataset.swipeEditItem || btn.dataset.swipeEditCat;
+        const kind = btn.dataset.swipeEditKind;
+        swipeHandlers.onEdit(id, kind);
+        closeSwipeRow(btn.closest(".item-row, .cat-row"));
+      });
+    });
+    root.querySelectorAll("[data-swipe-delete-item], [data-swipe-delete-cat]").forEach(btn=>{
+      btn.addEventListener("click", (e)=>{
+        e.stopPropagation();
+        const id = btn.dataset.swipeDeleteItem || btn.dataset.swipeDeleteCat;
+        const kind = btn.dataset.swipeDeleteKind;
+        swipeHandlers.onDelete(id, kind);
+      });
+    });
   }
 }
 
