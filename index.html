@@ -54,6 +54,7 @@
     background-size: 14px;
     padding-right: 32px !important;
   }
+  select:disabled, input:disabled{opacity:.5; cursor:not-allowed;}
   html,body{height:100%; overflow:hidden;}
   body{
     margin:0;
@@ -122,6 +123,62 @@
   /* ---------- Dashboard ---------- */
   .greeting{font-size:24px; font-weight:800; margin-bottom:18px; color:var(--heading, var(--text));}
 
+  .dash-toolbar{display:flex; gap:8px; margin-bottom:14px;}
+  .dash-tool-btn{
+    display:flex; align-items:center; gap:6px; flex:1; justify-content:center;
+    background:var(--surface-raised); border:1px solid var(--border); border-radius:999px;
+    padding:8px 10px; font-size:12.5px; font-weight:700; color:var(--text-muted); cursor:pointer;
+  }
+  .dash-tool-btn svg{width:15px; height:15px; flex-shrink:0;}
+  .dash-tool-btn.active{background:var(--accent-soft); border-color:var(--accent); color:var(--accent);}
+  .dash-tool-btn:disabled{opacity:.4; pointer-events:none;}
+
+  .and-or-toggle{display:flex; border:1px solid var(--border); border-radius:999px; overflow:hidden;}
+  .and-or-btn{
+    background:var(--surface); border:none; padding:6px 14px; font-size:12px; font-weight:700;
+    color:var(--text-muted); cursor:pointer;
+  }
+  .and-or-btn.active{background:var(--accent); color:#fff;}
+  .filter-sub-row{display:flex; gap:8px; margin:6px 0 14px 28px;}
+  .filter-divider{height:1px; background:var(--border); margin:16px 0;}
+
+  .filter-card{
+    background:var(--surface-raised); border:1px solid var(--border); border-radius:var(--radius-md);
+    padding:12px 14px; margin-bottom:10px;
+  }
+  .filter-card-head{display:flex; align-items:center; gap:10px;}
+  .filter-icon-circle{
+    width:32px; height:32px; border-radius:50%; background:var(--accent-soft); color:var(--accent);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .filter-icon-circle svg{width:16px; height:16px;}
+  .filter-card-title{flex:1; font-weight:700; font-size:13.5px;}
+  .switch{
+    position:relative; width:42px; height:24px; border-radius:999px; background:var(--border);
+    border:none; cursor:pointer; flex-shrink:0; padding:0;
+  }
+  .switch::after{
+    content:""; position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%;
+    background:#fff; transition: transform .18s ease; box-shadow:0 1px 3px rgba(0,0,0,.25);
+  }
+  .switch.on{background:var(--accent);}
+  .switch.on::after{transform:translateX(18px);}
+  .filter-chips{
+    display:flex; gap:6px; flex-wrap:wrap; margin-top:12px; padding-top:12px; border-top:1px solid var(--border);
+  }
+  .filter-chip{
+    border:1px solid var(--border); background:var(--surface); color:var(--text-muted);
+    border-radius:999px; padding:6px 12px; font-size:12px; font-weight:700; cursor:pointer; flex:1; text-align:center;
+  }
+  .filter-chip.active{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .filter-inline-row{display:flex; gap:8px; margin-top:12px; padding-top:12px; border-top:1px solid var(--border);}
+  .filter-inline-row select, .filter-inline-row input[type=date]{flex:1; min-width:0; margin-bottom:0;}
+  .filter-sub-row select, .filter-sub-row input[type=date]{flex:1; min-width:0; margin-bottom:0;}
+  .filter-logic-sep{
+    text-align:center; font-size:11px; font-weight:700; color:var(--text-muted);
+    text-transform:uppercase; letter-spacing:.04em; margin:8px 0;
+  }
+
   .slot-row{
     display:flex; align-items:center; justify-content:space-between;
     background: var(--surface); border:1px solid var(--border);
@@ -178,6 +235,15 @@
   }
   .alert-switch svg{width:14px;height:14px;}
   .alert-banner-wrap{margin-bottom:6px;}
+  .alert-summary{
+    display:flex; align-items:center; gap:8px; justify-content:space-between; cursor:pointer;
+    background:var(--alert-soft); color:#7A3626; border-radius:var(--radius-sm);
+    padding:10px 12px; font-size:12.5px; font-weight:700; margin-bottom:6px;
+  }
+  .alert-summary svg{width:17px;height:17px; flex-shrink:0;}
+  .alert-summary-chev{width:14px; height:14px; flex-shrink:0; transition: transform .2s ease;}
+  .alert-summary-chev svg{width:14px; height:14px; display:block;}
+  .alert-summary.open .alert-summary-chev{transform:rotate(90deg);}
 
   .task-card{
     display:flex; align-items:center; gap:12px;
@@ -261,18 +327,13 @@
   .task-desc{
     margin-top:10px; padding-top:10px; border-top:1px solid var(--border);
     font-size:13px; color:var(--text-muted); line-height:1.5; word-break:break-word;
-    display:none;
+    white-space:pre-wrap; display:none;
   }
   .item-row.task-row.desc-open .task-desc{display:block;}
   .task-desc a{color:var(--accent); word-break:break-all;}
   .desc-icon{width:18px; height:18px; color:var(--text-muted); flex-shrink:0;}
-  .inline-edit-input{
-    width:100%; border:none; border-bottom:1.5px solid var(--accent); background:transparent;
-    font-family:var(--font); font-size:16px; font-weight:600; color:var(--text); outline:none; padding:0;
-  }
-  .inline-edit-textarea{
-    width:100%; border:1px solid var(--accent); border-radius:var(--radius-sm); background:var(--surface);
-    font-family:var(--font); font-size:16px; color:var(--text); outline:none; padding:8px; resize:vertical;
+  .inline-editing{
+    outline:none; border-bottom:1.5px solid var(--accent); border-radius:2px; font-size:16px !important;
   }
   .repeat-icon{width:15px;height:15px; color:var(--text-muted); flex-shrink:0;}
   .priority-icon{flex-shrink:0;}
@@ -411,6 +472,7 @@
   .field-row{display:flex; gap:6px;}
   .field-row > div{flex:1; min-width:0;}
   .modal-box label{display:block; font-size:11.5px; font-weight:700; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:.03em;}
+  .modal-box .checkbox-row{text-transform:none; font-size:14px; letter-spacing:normal;}
   .checkbox-row{display:flex; align-items:center; gap:8px; font-size:14px; font-weight:600; text-transform:none; margin-bottom:14px;}
   .checkbox-row input{width:19px; height:19px; margin:0; accent-color:var(--accent); flex-shrink:0; cursor:pointer;}
   .star-toggle-row{
@@ -500,6 +562,11 @@
   .score-star{width:24px; height:24px; color:var(--border); display:inline-block;}
   .score-star svg{width:24px; height:24px; display:block;}
   .score-star.filled{color:#F2C230;}
+  .recap-star{width:32px; height:32px;}
+  .recap-star svg{width:32px; height:32px;}
+  .recap-star.filled.tier-bronze{color:#CD7F32;}
+  .recap-star.filled.tier-silver{color:#B7C1CC;}
+  .recap-star.filled.tier-gold{color:#F2C230;}
 
   .habit-filters-row{display:flex; gap:8px; margin-bottom:16px;}
   .habit-filters-row select{
@@ -525,9 +592,9 @@
   }
   .habit-streak-badge svg{width:21px;height:21px;}
 
-  .habit-days-row{position:relative; display:flex; align-items:center; gap:6px; margin-top:14px;}
+  .habit-days-row{position:relative; display:flex; align-items:center; gap:8px; margin-top:14px;}
   .day-circle{
-    position:relative; flex:1; aspect-ratio:1; min-width:0; border-radius:50%;
+    position:relative; flex:0 0 34px; width:34px; height:34px; border-radius:50%;
     display:flex; align-items:center; justify-content:center; z-index:1;
     font-size:11px; font-weight:700; color:var(--text-muted); background:var(--border);
   }
@@ -613,7 +680,7 @@ const DB_VERSION = 1;
 /* Version de l'app, indépendante de la structure interne des données (DATA_SCHEMA_VERSION).
    Change-la à chaque mise à jour publiée, en même temps que CACHE_NAME dans service-worker.js
    et version.json (utilisés pour l'export et la détection de nouvelle version). */
-const APP_VERSION = "2.1.0";
+const APP_VERSION = "2.2.0";
 const DATA_SCHEMA_VERSION = 1;
 let db;
 
@@ -739,6 +806,14 @@ const state = {
   plagesSelectedDate: null,        // date (AAAA-MM-JJ) du jour affiché dans Plages de temps
   habitsMomentFilter: null,        // moment de la journée filtré sur la page Habitudes
   habitsEnergyLevel: null,         // niveau d'énergie choisi (change les descriptions affichées)
+  keepDescOpenFor: null,           // id de tâche dont la description doit rester dépliée au prochain rendu
+  dashboardFilters: {
+    deadline: {enabled:false, mode:"toutes", date:null},
+    priority: {enabled:false, levels:{faible:true, moyenne:true, elevee:true}},
+    starred: {enabled:false},
+    deadlinePriority: {enabled:false, passed:true, today:true, after:true},
+    logic: "and",
+  },
   language: "fr",                  // langue courante de l'interface (fr/en)
 };
 
@@ -756,6 +831,7 @@ const STRINGS = {
     toutEstTermine: "Tout est terminé !", rienDAttente: "Rien d'autre en attente pour le moment.",
     etSiTuAvancais: (n)=>`Et si tu avançais sur « ${n} » ?`, passerACetteTache: "Passer à cette tâche",
     tempsPourSoi: "Aucune plage horaire planifiée.<br>C'est l'occasion de prendre du temps pour toi :)", choisirCategorie: "Choisir une catégorie de projets",
+    categoriesLabel: "Catégories",
     planifierPlage: "Planifier une plage horaire",
     tachesCount: (done,total)=>`${done}/${total} tâches`,
     projetEnCours: "Projet en cours :", tacheEnCours: "Tâche en cours", prochaineTache: "Prochaine tâche",
@@ -782,6 +858,7 @@ const STRINGS = {
     nom: "Nom", echeanceOpt: "Échéance (optionnelle)", priorite: "Priorité",
     faible: "Faible", moyenne: "Moyenne", elevee: "Élevée", aucunePriorite: "Aucune",
     recurrenceLabel: "Récurrence", aucuneRec: "Aucune", toutesLesSemaines: "Toutes les semaines",
+    pasEcheanceDef: "Pas d'échéance définie",
     toutesLes2Semaines: "Toutes les 2 semaines", tousLesMois: "Tous les mois", tousLesAns: "Tous les ans",
     tachePrioritaireJour: "Tâche prioritaire du jour",
     retirerEcheance: "Retirer l'échéance",
@@ -811,6 +888,16 @@ const STRINGS = {
     updateAvailableTitle: "Mise à jour disponible",
     updateAvailableMsg: "Une nouvelle version de Beeziday est disponible. Par précaution, pense à exporter tes données avant de mettre à jour. Pour mettre à jour : ferme complètement l'app (glisse-la vers le haut pour la fermer) puis rouvre-la.",
     historiqueSemaine: "Jours de cette semaine (appuie pour valider/dévalider)",
+    projetLabel: "Projet", aucunProjet: "Aucun",
+    toutesCategories: "Toutes les catégories",
+    filtres: "Filtres", filtreEcheance: "Tâches à échéance",
+    filtrePriorite: "Tâches avec un niveau de priorité", filtreEtoilees: "Tâches étoilées",
+    et: "Et", ou: "Ou", toutes: "Toutes", uniquement: "Uniquement", jusquA: "Jusqu'à",
+    alertSummary: (n)=>`${n} tâche${n>1?'s':''} à échéance courte`,
+    prioriserEcheances: "Afficher en priorité les tâches à échéance",
+    echeancePassee: "Passée", echeanceAujourdhui: "Aujourd'hui", echeanceApres: "Après aujourd'hui",
+    plageEnCours: "Plage en cours",
+    aucunePlage: "Aucune plage",
     dimanche:"Dimanche", lundi:"Lundi", mardi:"Mardi", mercredi:"Mercredi", jeudi:"Jeudi", vendredi:"Vendredi", samedi:"Samedi",
     touteLaJournee: "Toute la journée", ajouterHabitude: "Ajouter une habitude", modifierHabitude: "Modifier une habitude",
     nomHabitude: "Nom de l'habitude", frequence: "Fréquence", tousLesJours: "Tous les jours", xFoisParSemaine: "X fois par semaine",
@@ -825,6 +912,7 @@ const STRINGS = {
     toutEstTermine: "All done!", rienDAttente: "Nothing else pending right now.",
     etSiTuAvancais: (n)=>`How about working on "${n}"?`, passerACetteTache: "Switch to this task",
     tempsPourSoi: "No time block planned.<br>It's a good moment to take some time for yourself :)", choisirCategorie: "Choose a project category",
+    categoriesLabel: "Categories",
     planifierPlage: "Plan a time block",
     tachesCount: (done,total)=>`${done}/${total} tasks`,
     projetEnCours: "Current project:", tacheEnCours: "Current task", prochaineTache: "Next task",
@@ -851,6 +939,7 @@ const STRINGS = {
     nom: "Name", echeanceOpt: "Due date (optional)", priorite: "Priority",
     faible: "Low", moyenne: "Medium", elevee: "High", aucunePriorite: "None",
     recurrenceLabel: "Recurrence", aucuneRec: "None", toutesLesSemaines: "Every week",
+    pasEcheanceDef: "No due date set",
     toutesLes2Semaines: "Every 2 weeks", tousLesMois: "Every month", tousLesAns: "Every year",
     tachePrioritaireJour: "Priority task of the day",
     retirerEcheance: "Remove due date",
@@ -880,6 +969,16 @@ const STRINGS = {
     updateAvailableTitle: "Update available",
     updateAvailableMsg: "A new version of Beeziday is available. As a precaution, remember to export your data before updating. To update: fully close the app (swipe it away) then reopen it.",
     historiqueSemaine: "This week's days (tap to check/uncheck)",
+    projetLabel: "Project", aucunProjet: "None",
+    toutesCategories: "All categories",
+    filtres: "Filters", filtreEcheance: "Tasks with a due date",
+    filtrePriorite: "Tasks with a priority level", filtreEtoilees: "Starred tasks",
+    et: "And", ou: "Or", toutes: "All", uniquement: "Only", jusquA: "Until",
+    alertSummary: (n)=>`${n} task${n>1?'s':''} with a short deadline`,
+    prioriserEcheances: "Show tasks with a due date first",
+    echeancePassee: "Past", echeanceAujourdhui: "Today", echeanceApres: "After today",
+    plageEnCours: "Current time block",
+    aucunePlage: "No time block",
     dimanche:"Sunday", lundi:"Monday", mardi:"Tuesday", mercredi:"Wednesday", jeudi:"Thursday", vendredi:"Friday", samedi:"Saturday",
     touteLaJournee: "All day", ajouterHabitude: "Add a habit", modifierHabitude: "Edit habit",
     nomHabitude: "Habit name", frequence: "Frequency", tousLesJours: "Every day", xFoisParSemaine: "X times a week",
@@ -946,6 +1045,10 @@ const ICONS = {
   note: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/><path d="M14 3v5h5"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>`,
   flame: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 1.7c.8 3.3-.6 5-2.1 6.7C8.7 10 7 12 7 14.8 7 18.8 9.9 22 13.2 22c3.9 0 7.3-2.9 7.3-7 0-2.7-1.3-4.6-2.5-6 .2 1.9-.4 3.2-1.5 3.9-.3-2.6-1.4-4.2-2.5-5.4-1-1.1-1.7-2.3-1.5-5.8Z"/></svg>`,
   folder: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7Z"/></svg>`,
+  filter: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>`,
+  clock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>`,
+  priorityBars: `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="14" width="4" height="7" rx="1"/><rect x="10" y="9" width="4" height="12" rx="1"/><rect x="17" y="4" width="4" height="17" rx="1"/></svg>`,
+  trendingUp: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg>`,
 };
 
 /* Icône de priorité : 3 barres croissantes, dont N sont remplies selon le niveau.
@@ -1032,7 +1135,15 @@ function slotEndMinutes(t){
 /* Sort a list of active items (projects or standalone tasks) by:
    1. priority desc  2. deadline asc (no deadline last)  3. manual order asc */
 function sortByDashboardRule(items){
+  const dp = state.dashboardFilters && state.dashboardFilters.deadlinePriority;
   return [...items].sort((a,b)=>{
+    if(dp && dp.enabled){
+      const am = matchesDeadlinePriority(a, dp) ? 1 : 0;
+      const bm = matchesDeadlinePriority(b, dp) ? 1 : 0;
+      if(am !== bm) return bm - am;
+    }
+    const sa = a.starred ? 1 : 0, sb = b.starred ? 1 : 0;
+    if(sa !== sb) return sb - sa;
     const pr = PRIORITY_RANK[b.priority] - PRIORITY_RANK[a.priority];
     if(pr !== 0) return pr;
     const da = a.deadline ? new Date(a.deadline).getTime() : Infinity;
@@ -1040,6 +1151,14 @@ function sortByDashboardRule(items){
     if(da !== db_) return da - db_;
     return (a.order||0) - (b.order||0);
   });
+}
+
+function matchesDeadlinePriority(item, dp){
+  if(!item.deadline) return false;
+  const days = daysUntil(item.deadline);
+  if(days < 0) return !!dp.passed;
+  if(days === 0) return !!dp.today;
+  return !!dp.after;
 }
 
 /* =========================================================================
@@ -1072,15 +1191,40 @@ async function getProjectDashboardStatus(project){
   return { empty: subs.length === 0, done: subs.length > 0 && subs.every(t=>t.status === "done") };
 }
 
-/* Construit la liste des candidats actifs (projets non vides/non terminés + tâches seules non faites) pour un thème */
+/* Filtres optionnels du Dashboard (bouton "Filtres") : uniquement échéance / priorité / étoilées.
+   Combinables : un item passe s'il satisfait TOUS les filtres actuellement cochés. */
+function passesDashboardFilters(item){
+  const f = state.dashboardFilters;
+  if(!f) return true;
+  const checks = [];
+  if(f.deadline && f.deadline.enabled) checks.push(checkDeadlineFilter(item, f.deadline));
+  if(f.priority && f.priority.enabled) checks.push(checkPriorityFilter(item, f.priority));
+  if(f.starred && f.starred.enabled) checks.push(!!item.starred);
+  if(checks.length === 0) return true;
+  return f.logic === "or" ? checks.some(Boolean) : checks.every(Boolean);
+}
+function checkDeadlineFilter(item, d){
+  if(!item.deadline) return false;
+  if(d.mode === "uniquement") return d.date ? item.deadline === d.date : true;
+  if(d.mode === "jusqua") return d.date ? item.deadline <= d.date : true;
+  return true; // "toutes" : a une échéance, n'importe laquelle
+}
+function checkPriorityFilter(item, p){
+  if(!item.priority || item.priority === "aucune") return false;
+  return !!p.levels[item.priority];
+}
+
+/* Construit la liste des candidats actifs (projets non vides/non terminés + tâches seules non faites)
+   pour un thème donné, ou pour TOUTES les catégories si themeId vaut null. */
 async function buildCandidates(themeId, excludeId){
   const {projects, tasks} = await getAllActive();
-  const projectCandidates = projects.filter(p=>p.themeId === themeId && p.id !== excludeId);
+  const projectCandidates = projects.filter(p => (themeId===null || p.themeId === themeId) && p.id !== excludeId);
   const statuses = await Promise.all(projectCandidates.map(getProjectDashboardStatus));
-  return [
+  const candidates = [
     ...projectCandidates.filter((p,i)=>!statuses[i].empty && !statuses[i].done).map(p=>({...p, kind:"project"})),
-    ...tasks.filter(t=>!t.projectId && t.themeId === themeId && t.status !== "done" && t.id !== excludeId).map(t=>({...t, kind:"task"}))
+    ...tasks.filter(t=>!t.projectId && (themeId===null || t.themeId === themeId) && t.status !== "done" && t.id !== excludeId).map(t=>({...t, kind:"task"}))
   ];
+  return candidates.filter(passesDashboardFilters);
 }
 
 /* Choisit l'élément (projet ou tâche seule) à afficher pour un thème donné.
@@ -1112,11 +1256,11 @@ async function pickItemAnyTheme(excludeId){
 
 async function getUpcomingDeadlineAlerts(themeId, excludeId){
   const {projects, tasks} = await getAllActive();
-  const themeProjects = projects.filter(p=>p.themeId === themeId);
+  const themeProjects = projects.filter(p => themeId===null || p.themeId === themeId);
   const statuses = await Promise.all(themeProjects.map(getProjectDashboardStatus));
   const all = [
     ...themeProjects.filter((p,i)=>!statuses[i].empty && !statuses[i].done),
-    ...tasks.filter(t=>!t.projectId && t.themeId === themeId && t.status !== "done")
+    ...tasks.filter(t=>!t.projectId && (themeId===null || t.themeId === themeId) && t.status !== "done")
   ];
   return all.filter(i=> i.id !== excludeId && i.deadline && daysUntil(i.deadline) <= 14 && daysUntil(i.deadline) >= 0);
 }
@@ -1275,6 +1419,7 @@ async function renderDashboard(){
 
   const slot = await getCurrentTimeSlot();
   const activeThemeId = state.currentSlotThemeOverride || (slot ? slot.themeId : null);
+  const isAllCategories = activeThemeId === "__all__";
 
   let bodyHtml = "";
 
@@ -1287,7 +1432,7 @@ async function renderDashboard(){
       <button class="btn-choose" id="planSlotBtn" style="display:block;margin:10px auto 0;">${tr("planifierPlage")}</button>
     </div>`;
   } else {
-    const theme = themes.find(t=>t.id === activeThemeId);
+    const theme = isAllCategories ? null : themes.find(t=>t.id === activeThemeId);
 
     if(theme && !theme.forProjects){
       // Catégorie réservée aux plages (pas de projets associés, ex : "Rendez-vous") :
@@ -1299,14 +1444,20 @@ async function renderDashboard(){
         ${noteToShow ? `<p class="small">${escapeHtml(noteToShow)}</p>` : ""}
       </div>`;
     } else {
-      const item = await pickItemForTheme(activeThemeId);
+      const pickThemeId = isAllCategories ? null : activeThemeId;
+      const item = await pickItemForTheme(pickThemeId);
 
       // Alerte échéances proches, uniquement dans la même catégorie que celle affichée
-      const alerts = await getUpcomingDeadlineAlerts(activeThemeId, item ? item.id : null);
+      const alerts = await getUpcomingDeadlineAlerts(pickThemeId, item ? item.id : null);
       if(alerts.length){
-        bodyHtml += `<div class="alert-banner-wrap">` + alerts.map(a=>`
+        bodyHtml += `
+        <div class="alert-summary" id="alertSummaryToggle">
+          ${ICONS.alert}
+          <span style="flex:1;">${tr("alertSummary", alerts.length)}</span>
+          <span class="alert-summary-chev">${ICONS.chevRight}</span>
+        </div>
+        <div class="alert-banner-wrap" id="alertBannerWrap" style="display:none;">` + alerts.map(a=>`
           <div class="alert-banner">
-            ${ICONS.alert}
             <span class="alert-text"><strong>${escapeHtml(a.name)}</strong> — ${tr("echeance")} ${formatDeadline(a.deadline)}</span>
             <button class="alert-switch" data-switch-theme="${a.themeId}" data-switch-item="${a.id}" aria-label="Basculer sur ce projet">${ICONS.chevRight}</button>
           </div>
@@ -1317,7 +1468,7 @@ async function renderDashboard(){
         const fallback = await pickItemAnyTheme(null);
         bodyHtml += renderFinishedBox(fallback);
       } else {
-        const {current, next, progress, total, done} = await getCurrentAndNextTask(item, activeThemeId);
+        const {current, next, progress, total, done} = await getCurrentAndNextTask(item, pickThemeId);
 
         if(item.kind === "project"){
           const pct = Math.round(progress*100);
@@ -1362,16 +1513,30 @@ async function renderDashboard(){
     }
 
     // Sélecteur de thème (menu déroulant à côté de la plage)
-    bodyHtml = `
-    <div class="slot-row">
-      <div class="slot-time">${slot ? `${slot.start}–${slot.end}` : "Aucune plage"}</div>
-      <select class="slot-select" id="slotThemeSelect">
-        ${themes.filter(t=>t.forSlots || t.forProjects).map(t=>`<option value="${t.id}" ${t.id===activeThemeId?"selected":""}>${escapeHtml(themeDisplayName(t))}</option>`).join("")}
-      </select>
-    </div>` + bodyHtml;
+    // Rien à ajouter ici : le sélecteur de catégorie est maintenant toujours affiché plus bas,
+    // qu'une plage soit active ou non.
   }
 
-  return `<div class="greeting">${greetingWord()}${name} !</div>` + bodyHtml;
+  const slotRowHtml = `
+  <div class="slot-row">
+    <div class="slot-time">${slot ? `${slot.start}–${slot.end}` : tr("aucunePlage")}</div>
+    <select class="slot-select" id="slotThemeSelect">
+      ${!activeThemeId ? `<option value="" selected disabled>${tr("categoriesLabel")}</option>` : ""}
+      <option value="__all__" ${isAllCategories?"selected":""}>${tr("toutesCategories")}</option>
+      ${themes.filter(t=>t.forSlots || t.forProjects).map(t=>`<option value="${t.id}" ${t.id===activeThemeId?"selected":""}>${escapeHtml(themeDisplayName(t))}</option>`).join("")}
+    </select>
+  </div>`;
+
+  const isOnCurrentSlot = !state.currentSlotThemeOverride;
+  const filtersActive = !!(state.dashboardFilters && (state.dashboardFilters.deadline.enabled || state.dashboardFilters.priority.enabled || state.dashboardFilters.starred.enabled || state.dashboardFilters.deadlinePriority.enabled));
+  const toolbarHtml = `
+  <div class="dash-toolbar">
+    <button class="dash-tool-btn ${filtersActive?'active':''}" id="filtersBtn">${ICONS.filter}<span>${tr("filtres")}</span></button>
+    <button class="dash-tool-btn" id="currentSlotBtn" ${isOnCurrentSlot?'disabled':''}>${ICONS.clock}<span>${tr("plageEnCours")}</span></button>
+  </div>`;
+
+  return `<div class="greeting">${greetingWord()}${name} !</div>` + slotRowHtml + toolbarHtml + bodyHtml;
+
 }
 
 function renderFinishedBox(suggestion){
@@ -1396,6 +1561,7 @@ function renderTaskCard(task, isNext){
     <div class="check-circle ${task.status==='done'?'done':''}" ${isNext?'':`data-checktask="${task.id}"`}>${ICONS.check}</div>
     <div class="task-name">${escapeHtml(task.name)}</div>
     ${priorityIcon(task.priority)}
+    ${task.deadline ? `<span class="task-deadline ${daysUntil(task.deadline)<=14?'soon':''}">${formatDeadline(task.deadline)}</span>` : ""}
     <div class="star ${task.starred ? '' : 'off'}">${ICONS.star}</div>
   </div>`;
 }
@@ -2151,7 +2317,9 @@ async function openHabitModal(existing){
         const habit = (await idbGetAll("habits")).find(h=>h.id===existing.id);
         if(!habit) return;
         habit.completions = habit.completions || {};
-        if(habit.completions[iso]) delete habit.completions[iso];
+        // "skip" ou vide → validé ; validé → vide. Un jour "skip" devient donc "validé" en un clic,
+        // ce qui retire le skip et le rend à nouveau disponible pour le reste de la semaine.
+        if(habit.completions[iso] === true) delete habit.completions[iso];
         else habit.completions[iso] = true;
         await idbPut("habits", habit);
         existing.completions = habit.completions;
@@ -2202,15 +2370,47 @@ function weekRecapMessage(score){
 
 function showWeekRecapModal(score){
   const {tier, title, msg} = weekRecapMessage(score);
+  const starsHtml = [1,2,3].map(n=>`<span class="score-star recap-star ${n<=score?'filled tier-'+tier:''}">${ICONS.star}</span>`).join("");
   openModal(`
     <h3 style="text-align:center;">${title}</h3>
-    <div class="week-recap-medal ${tier?`medal filled tier-${tier}`:''}" style="width:64px;height:64px;"></div>
+    <div style="display:flex; justify-content:center; gap:6px; margin:4px 0 16px;">${starsHtml}</div>
     <p style="text-align:center; font-size:14px; color:var(--text); margin-bottom:18px;">${msg}</p>
     <div class="modal-actions" style="justify-content:center;">
       <button class="btn-primary" id="recapClose">${tr("fermer")}</button>
     </div>
   `);
   document.getElementById("recapClose").addEventListener("click", closeModal);
+}
+
+/* Si l'option est activée dans les réglages, marque automatiquement UN jour manqué (dans le
+   passé de la semaine en cours, jamais aujourd'hui) comme "skip" — au plus une fois par semaine
+   et par habitude. Se vérifie une fois par jour. Reste éditable ensuite : dans la modale d'édition,
+   cliquer sur ce jour le valide et libère à nouveau le skip pour le reste de la semaine. */
+async function checkAutoSkipHabits(){
+  const settings = Object.fromEntries((await idbGetAll("settings")).map(s=>[s.key,s.value]));
+  if(!settings.allowHabitSkip) return;
+  const todayISO = toISODate(new Date());
+  if(settings.lastAutoSkipCheck === todayISO) return;
+
+  const weekStartDay = settings.weekStart ?? 1;
+  const weekDatesISOs = getWeekDates(0, weekStartDay).map(toISODate);
+  const habits = await idbGetAll("habits");
+
+  for(const h of habits){
+    if(h.frequency !== "quotidienne") continue;
+    h.completions = h.completions || {};
+    const alreadyUsedThisWeek = weekDatesISOs.some(d => h.completions[d] === "skip");
+    if(alreadyUsedThisWeek) continue;
+    for(const iso of weekDatesISOs){
+      if(iso >= todayISO) break; // jamais aujourd'hui ni le futur
+      if(!h.completions[iso]){
+        h.completions[iso] = "skip";
+        await idbPut("habits", h);
+        break; // un seul jour auto-skip par semaine
+      }
+    }
+  }
+  await idbPut("settings", {key:"lastAutoSkipCheck", value: todayISO});
 }
 
 async function checkWeekRollover(){
@@ -2375,6 +2575,24 @@ function attachScreenEvents(screenName, root){
     const sel = root.querySelector("#slotThemeSelect");
     if(sel) sel.addEventListener("change", (e)=>{
       state.currentSlotThemeOverride = e.target.value;
+      state.currentItemOverride = null;
+      renderStack();
+    });
+
+    const alertToggle = root.querySelector("#alertSummaryToggle");
+    if(alertToggle) alertToggle.addEventListener("click", ()=>{
+      const wrap = root.querySelector("#alertBannerWrap");
+      const isOpen = wrap.style.display !== "none";
+      wrap.style.display = isOpen ? "none" : "block";
+      alertToggle.classList.toggle("open", !isOpen);
+    });
+
+    const filtersBtn = root.querySelector("#filtersBtn");
+    if(filtersBtn) filtersBtn.addEventListener("click", openFiltersModal);
+
+    const currentSlotBtn = root.querySelector("#currentSlotBtn");
+    if(currentSlotBtn) currentSlotBtn.addEventListener("click", ()=>{
+      state.currentSlotThemeOverride = null;
       state.currentItemOverride = null;
       renderStack();
     });
@@ -2729,6 +2947,11 @@ function attachDoneSectionEvents(root){
 }
 
 function attachItemRowEvents(root){
+  if(state.keepDescOpenFor){
+    const row = root.querySelector(`.item-row[data-item="${state.keepDescOpenFor}"]`);
+    if(row) row.classList.add("desc-open");
+    state.keepDescOpenFor = null;
+  }
   root.querySelectorAll("[data-checktask]").forEach(el=>{
     el.addEventListener("click", async (e)=>{
       e.stopPropagation();
@@ -2753,6 +2976,7 @@ function attachItemRowEvents(root){
   });
   root.querySelectorAll("[data-inline-name]").forEach(nameEl=>{
     nameEl.addEventListener("click", (e)=>{
+      if(nameEl.isContentEditable) return;
       const row = nameEl.closest(".item-row");
       const hasDesc = row && row.dataset.hasDesc === "1";
       if(hasDesc && !row.classList.contains("desc-open")){
@@ -2760,69 +2984,86 @@ function attachItemRowEvents(root){
         return;
       }
       e.stopPropagation();
-      startInlineNameEdit(nameEl, nameEl.dataset.inlineName);
+      startInlineEdit(nameEl, nameEl.dataset.inlineName, "name", e.clientX, e.clientY);
     });
   });
   root.querySelectorAll("[data-inline-desc]").forEach(descEl=>{
     descEl.addEventListener("click", (e)=>{
+      if(descEl.isContentEditable) return;
       if(e.target.closest("a")) return; // laisser les liens s'ouvrir normalement
       e.stopPropagation();
-      startInlineDescEdit(descEl, descEl.dataset.inlineDesc);
+      startInlineEdit(descEl, descEl.dataset.inlineDesc, "description", e.clientX, e.clientY);
     });
   });
 }
 
-function startInlineNameEdit(nameEl, taskId){
-  if(nameEl.querySelector("input")) return;
-  const original = nameEl.textContent;
-  nameEl.textContent = "";
-  const input = document.createElement("input");
-  input.type = "text";
-  input.className = "inline-edit-input";
-  input.value = original;
-  nameEl.appendChild(input);
-  input.focus();
-  input.select();
+/* Place le curseur texte à l'endroit précis du clic (plutôt qu'au début ou à la fin) */
+function placeCaretAtPoint(x, y){
+  let range = null;
+  if(document.caretRangeFromPoint){
+    range = document.caretRangeFromPoint(x, y);
+  } else if(document.caretPositionFromPoint){
+    const pos = document.caretPositionFromPoint(x, y);
+    if(pos){ range = document.createRange(); range.setStart(pos.offsetNode, pos.offset); }
+  }
+  if(range){
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    range.collapse(true);
+    sel.addRange(range);
+  }
+}
+
+/* Édition en ligne du titre ou de la description d'une tâche, directement sur l'élément affiché
+   (contenteditable) : le texte garde exactement sa mise en forme normale (retour à la ligne
+   compris), et le curseur se place là où on a tapé plutôt que de tout sélectionner. */
+function startInlineEdit(el, taskId, field, clickX, clickY){
+  const row = el.closest(".item-row");
+  let original = el.textContent; // approximation immédiate (les retours à la ligne d'une description peuvent manquer)
+
+  // Le focus doit rester synchrone, dans le même geste utilisateur, sinon le clavier ne s'affiche
+  // pas sur mobile (iOS notamment coupe l'activation si un await passe avant le focus()).
+  el.contentEditable = "true";
+  el.classList.add("inline-editing");
+  if(row) row.classList.add("editing-lock");
+  el.focus();
+  placeCaretAtPoint(clickX, clickY);
+
+  if(field === "description"){
+    idbGetAll("tasks").then(tasks=>{
+      const task = tasks.find(t=>t.id===taskId);
+      if(task && document.activeElement === el){
+        original = task.description || "";
+        if(el.textContent !== original) el.textContent = original;
+      }
+    });
+  }
+
   let done = false;
-  const commit = async ()=>{
+  const finishEdit = async (cancel)=>{
     if(done) return;
     done = true;
-    const val = input.value.trim();
-    if(val && val !== original){
+    el.contentEditable = "false";
+    el.classList.remove("inline-editing");
+    if(row) row.classList.remove("editing-lock");
+    if(field === "description") state.keepDescOpenFor = taskId;
+    if(cancel){ renderStack(); return; }
+    const val = el.textContent.trim();
+    if(field === "name"){
+      if(val && val !== original){
+        const task = (await idbGetAll("tasks")).find(t=>t.id===taskId);
+        if(task){ task.name = val; await idbPut("tasks", task); }
+      }
+    } else {
       const task = (await idbGetAll("tasks")).find(t=>t.id===taskId);
-      if(task){ task.name = val; await idbPut("tasks", task); }
+      if(task){ task.description = val; await idbPut("tasks", task); }
     }
     renderStack();
   };
-  input.addEventListener("blur", commit);
-  input.addEventListener("keydown", (ev)=>{
-    if(ev.key === "Enter") input.blur();
-    if(ev.key === "Escape"){ done = true; renderStack(); }
-  });
-}
-
-function startInlineDescEdit(descEl, taskId){
-  if(descEl.querySelector("textarea")) return;
-  const original = descEl.textContent;
-  descEl.innerHTML = "";
-  const textarea = document.createElement("textarea");
-  textarea.className = "inline-edit-textarea";
-  textarea.value = original;
-  textarea.rows = 3;
-  descEl.appendChild(textarea);
-  textarea.focus();
-  let done = false;
-  const commit = async ()=>{
-    if(done) return;
-    done = true;
-    const val = textarea.value.trim();
-    const task = (await idbGetAll("tasks")).find(t=>t.id===taskId);
-    if(task){ task.description = val; await idbPut("tasks", task); }
-    renderStack();
-  };
-  textarea.addEventListener("blur", commit);
-  textarea.addEventListener("keydown", (ev)=>{
-    if(ev.key === "Escape"){ done = true; renderStack(); }
+  el.addEventListener("blur", ()=>finishEdit(false), {once:true});
+  el.addEventListener("keydown", (ev)=>{
+    if(field === "name" && ev.key === "Enter"){ ev.preventDefault(); el.blur(); }
+    if(ev.key === "Escape"){ ev.preventDefault(); finishEdit(true); }
   });
 }
 
@@ -2854,6 +3095,7 @@ function attachCatFormEvents(root){
 /* =========================================================================
    Modale générique (modifier / supprimer)
    ========================================================================= */
+let modalOutsideClickHandler = null;
 function openModal(html){
   document.getElementById("modalBox").innerHTML = html;
   document.getElementById("modalOverlay").style.display = "flex";
@@ -2861,9 +3103,13 @@ function openModal(html){
 function closeModal(){
   document.getElementById("modalOverlay").style.display = "none";
   document.getElementById("modalBox").innerHTML = "";
+  modalOutsideClickHandler = null;
 }
 document.getElementById("modalOverlay").addEventListener("click", (e)=>{
-  if(e.target.id === "modalOverlay") closeModal();
+  if(e.target.id === "modalOverlay"){
+    if(modalOutsideClickHandler) modalOutsideClickHandler();
+    else closeModal();
+  }
 });
 
 /* Suppression en 2 clics (pas de confirm() natif, qui ne fonctionne pas dans un aperçu en iframe) */
@@ -2883,9 +3129,10 @@ function attachTwoStepDelete(btn, onConfirm){
 let modalContext = {};
 
 /* ---- Formulaire projet / tâche ---- */
-function itemFormHtml(kind, existing, showCategory, themesList){
+function itemFormHtml(kind, existing, showCategory, themesList, projectsList){
   const isTask = kind === "task";
   const starred = !!(existing && existing.starred);
+  const hasDeadline = !!(existing && existing.deadline);
   return `
   <h3>${existing ? (isTask?tr("modifierTache"):tr("modifierProjet")) : (isTask?tr("ajouterTache"):tr("ajouterProjet"))}</h3>
   <input type="text" id="mName" placeholder="${tr("nom")}" value="${existing ? escapeHtml(existing.name) : ""}">
@@ -2895,11 +3142,30 @@ function itemFormHtml(kind, existing, showCategory, themesList){
     ${themesList.map(t=>`<option value="${t.id}">${escapeHtml(themeDisplayName(t))}</option>`).join("")}
   </select>
   ` : ``}
+  ${isTask ? `
+  <label>${tr("projetLabel")}</label>
+  <select id="mProject">
+    <option value="">${tr("aucunProjet")}</option>
+    ${projectsList.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join("")}
+  </select>
+  ` : ``}
   <label>${tr("echeanceOpt")}</label>
   <div class="field-with-clear">
     <input type="date" id="mDeadline" value="${existing && existing.deadline ? existing.deadline : ""}">
     <button type="button" class="clear-field-btn" id="mDeadlineClear" aria-label="${tr("retirerEcheance")}">${ICONS.close}</button>
   </div>
+  ${isTask ? `
+  <label>${tr("recurrenceLabel")}</label>
+  <select id="mRecurrence" ${hasDeadline?'':'disabled'}>
+    <option value="__none__">${tr("pasEcheanceDef")}</option>
+    <option value="aucune">${tr("aucuneRec")}</option>
+    <option value="quotidienne">${tr("tousLesJours")}</option>
+    <option value="hebdomadaire">${tr("toutesLesSemaines")}</option>
+    <option value="2semaines">${tr("toutesLes2Semaines")}</option>
+    <option value="mensuelle">${tr("tousLesMois")}</option>
+    <option value="annuelle">${tr("tousLesAns")}</option>
+  </select>
+  ` : ``}
   <label>${tr("priorite")}</label>
   <select id="mPriority">
     <option value="aucune">${tr("aucunePriorite")}</option>
@@ -2908,15 +3174,6 @@ function itemFormHtml(kind, existing, showCategory, themesList){
     <option value="elevee">${tr("elevee")}</option>
   </select>
   ${isTask ? `
-  <label>${tr("recurrenceLabel")}</label>
-  <select id="mRecurrence">
-    <option value="aucune">${tr("aucuneRec")}</option>
-    <option value="quotidienne">${tr("tousLesJours")}</option>
-    <option value="hebdomadaire">${tr("toutesLesSemaines")}</option>
-    <option value="2semaines">${tr("toutesLes2Semaines")}</option>
-    <option value="mensuelle">${tr("tousLesMois")}</option>
-    <option value="annuelle">${tr("tousLesAns")}</option>
-  </select>
   <div class="star-toggle-row">
     <span>${tr("tachePrioritaireJour")}</span>
     <button type="button" class="star-toggle ${starred?'active':''}" id="mStarredToggle" aria-pressed="${starred}">${ICONS.star}</button>
@@ -2938,20 +3195,58 @@ async function openItemModal(kind, existing, context){
   let themesList = [];
   if(showCategory) themesList = (await idbGetAll("themes")).filter(t=>t.forProjects).sort((a,b)=>(a.order||0)-(b.order||0));
 
+  // Détermine la catégorie actuelle de la tâche, pour proposer les projets où on peut la déplacer
+  let projectsList = [];
+  if(kind === "task"){
+    let currentThemeId = null;
+    if(existing && existing.projectId){
+      const proj = (await idbGetAll("projects")).find(p=>p.id===existing.projectId);
+      currentThemeId = proj ? proj.themeId : null;
+    } else if(existing){
+      currentThemeId = existing.themeId;
+    } else {
+      currentThemeId = context.themeId || null;
+    }
+    if(currentThemeId){
+      projectsList = (await idbGetAll("projects")).filter(p=>p.themeId === currentThemeId && p.status !== "idea");
+    }
+  }
+
   modalContext = {kind, existing, context, showCategory};
-  openModal(itemFormHtml(kind, existing, showCategory, themesList));
+  openModal(itemFormHtml(kind, existing, showCategory, themesList, projectsList));
   document.getElementById("mPriority").value = existing ? (existing.priority || "aucune") : "aucune";
   if(kind === "task"){
-    document.getElementById("mRecurrence").value = existing ? (existing.recurrence || "aucune") : "aucune";
+    const recSelect = document.getElementById("mRecurrence");
+    recSelect.value = (existing && existing.deadline && existing.recurrence) ? existing.recurrence : "aucune";
+    const projSelect = document.getElementById("mProject");
+    if(projSelect) projSelect.value = (existing && existing.projectId) || (context.projectId || "");
   }
   if(showCategory){
     document.getElementById("mTheme").value = existing ? existing.themeId : (context.themeId || "default");
   }
   document.getElementById("mCancel").addEventListener("click", closeModal);
   document.getElementById("mSave").addEventListener("click", saveItemModal);
+  modalOutsideClickHandler = saveItemModal;
+
+  function updateRecurrenceState(){
+    const recSelect = document.getElementById("mRecurrence");
+    const deadlineInput = document.getElementById("mDeadline");
+    if(!recSelect || !deadlineInput) return;
+    const has = !!deadlineInput.value;
+    recSelect.disabled = !has;
+    if(!has) recSelect.value = "__none__";
+    else if(recSelect.value === "__none__") recSelect.value = existing ? (existing.recurrence || "aucune") : "aucune";
+  }
+  if(kind === "task") updateRecurrenceState();
+
   document.getElementById("mDeadlineClear").addEventListener("click", ()=>{
     document.getElementById("mDeadline").value = "";
+    updateRecurrenceState();
   });
+  const deadlineInput = document.getElementById("mDeadline");
+  if(deadlineInput && kind === "task"){
+    deadlineInput.addEventListener("change", updateRecurrenceState);
+  }
   const starToggle = document.getElementById("mStarredToggle");
   if(starToggle){
     starToggle.addEventListener("click", ()=>{
@@ -2995,10 +3290,19 @@ async function saveItemModal(){
     obj.themeId = document.getElementById("mTheme").value;
   }
   if(kind === "task"){
-    obj.recurrence = document.getElementById("mRecurrence").value;
+    obj.recurrence = deadline ? (document.getElementById("mRecurrence").value || "aucune").replace("__none__","aucune") : "aucune";
     const starToggle = document.getElementById("mStarredToggle");
     obj.starred = starToggle ? starToggle.classList.contains("active") : false;
     obj.description = document.getElementById("mDescription").value.trim();
+    const projSelect = document.getElementById("mProject");
+    if(projSelect){
+      const chosenProjectId = projSelect.value || null;
+      obj.projectId = chosenProjectId;
+      if(chosenProjectId){
+        const proj = (await idbGetAll("projects")).find(p=>p.id===chosenProjectId);
+        if(proj) obj.themeId = proj.themeId;
+      }
+    }
   }
   await idbPut(store, obj);
   closeModal();
@@ -3057,6 +3361,150 @@ function openCatEditModal(theme){
 }
 
 /* ---- Sélecteur de catégorie pour le Dashboard (remplace la navigation vers Projets) ---- */
+function openFiltersModal(){
+  const f = state.dashboardFilters;
+  const todayISO = toISODate(new Date());
+  openModal(`
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+      <h3 style="margin-bottom:0;">${tr("filtres")}</h3>
+      <div class="and-or-toggle">
+        <button type="button" class="and-or-btn ${f.logic==='and'?'active':''}" data-logic="and">${tr("et")}</button>
+        <button type="button" class="and-or-btn ${f.logic==='or'?'active':''}" data-logic="or">${tr("ou")}</button>
+      </div>
+    </div>
+
+    <div class="filter-card">
+      <div class="filter-card-head">
+        <span class="filter-icon-circle">${ICONS.clock}</span>
+        <span class="filter-card-title">${tr("filtreEcheance")}</span>
+        <button type="button" class="switch ${f.deadline.enabled?'on':''}" id="fDeadline"></button>
+      </div>
+      <div class="filter-inline-row" id="deadlineSubOptions" style="display:${f.deadline.enabled?'flex':'none'}">
+        <select id="fDeadlineMode">
+          <option value="toutes" ${f.deadline.mode==='toutes'?'selected':''}>${tr("toutes")}</option>
+          <option value="uniquement" ${f.deadline.mode==='uniquement'?'selected':''}>${tr("uniquement")}</option>
+          <option value="jusqua" ${f.deadline.mode==='jusqua'?'selected':''}>${tr("jusquA")}</option>
+        </select>
+        <input type="date" id="fDeadlineDate" value="${f.deadline.date || todayISO}" ${f.deadline.mode==='toutes'?'disabled':''}>
+      </div>
+    </div>
+    <div class="filter-logic-sep" data-sep>${f.logic==='and'?tr('et'):tr('ou')}</div>
+
+    <div class="filter-card">
+      <div class="filter-card-head">
+        <span class="filter-icon-circle">${ICONS.priorityBars}</span>
+        <span class="filter-card-title">${tr("filtrePriorite")}</span>
+        <button type="button" class="switch ${f.priority.enabled?'on':''}" id="fPriority"></button>
+      </div>
+      <div class="filter-chips" id="prioritySubOptions" style="display:${f.priority.enabled?'flex':'none'}">
+        <button type="button" class="filter-chip ${f.priority.levels.faible?'active':''}" data-chip="fPrioFaible">${tr("faible")}</button>
+        <button type="button" class="filter-chip ${f.priority.levels.moyenne?'active':''}" data-chip="fPrioMoyenne">${tr("moyenne")}</button>
+        <button type="button" class="filter-chip ${f.priority.levels.elevee?'active':''}" data-chip="fPrioElevee">${tr("elevee")}</button>
+      </div>
+    </div>
+    <div class="filter-logic-sep" data-sep>${f.logic==='and'?tr('et'):tr('ou')}</div>
+
+    <div class="filter-card">
+      <div class="filter-card-head">
+        <span class="filter-icon-circle">${ICONS.star}</span>
+        <span class="filter-card-title">${tr("filtreEtoilees")}</span>
+        <button type="button" class="switch ${f.starred.enabled?'on':''}" id="fStarred"></button>
+      </div>
+    </div>
+
+    <div class="filter-divider"></div>
+
+    <div class="filter-card">
+      <div class="filter-card-head">
+        <span class="filter-icon-circle">${ICONS.trendingUp}</span>
+        <span class="filter-card-title">${tr("prioriserEcheances")}</span>
+        <button type="button" class="switch ${f.deadlinePriority.enabled?'on':''}" id="fDeadlinePriority"></button>
+      </div>
+      <div class="filter-chips" id="deadlinePrioritySubOptions" style="display:${f.deadlinePriority.enabled?'flex':'none'}">
+        <button type="button" class="filter-chip ${f.deadlinePriority.passed?'active':''}" data-chip="fDpPassed">${tr("echeancePassee")}</button>
+        <button type="button" class="filter-chip ${f.deadlinePriority.today?'active':''}" data-chip="fDpToday">${tr("echeanceAujourdhui")}</button>
+        <button type="button" class="filter-chip ${f.deadlinePriority.after?'active':''}" data-chip="fDpAfter">${tr("echeanceApres")}</button>
+      </div>
+    </div>
+
+    <div class="modal-actions" style="justify-content:center;">
+      <button class="btn-primary" id="filtersApply">${tr("fermer")}</button>
+    </div>
+  `);
+
+  let logic = f.logic;
+  document.querySelectorAll(".and-or-btn").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      logic = btn.dataset.logic;
+      document.querySelectorAll(".and-or-btn").forEach(b=>b.classList.toggle("active", b===btn));
+      document.querySelectorAll("[data-sep]").forEach(sep=> sep.textContent = logic==="and" ? tr("et") : tr("ou"));
+    });
+  });
+
+  // Puces (niveaux de priorité, tranches d'échéance) : simple bascule de la classe active
+  document.querySelectorAll(".filter-chip").forEach(chip=>{
+    chip.addEventListener("click", ()=> chip.classList.toggle("active"));
+  });
+
+  const deadlineSwitch = document.getElementById("fDeadline");
+  const deadlineSub = document.getElementById("deadlineSubOptions");
+  deadlineSwitch.addEventListener("click", ()=>{
+    deadlineSwitch.classList.toggle("on");
+    deadlineSub.style.display = deadlineSwitch.classList.contains("on") ? "flex" : "none";
+  });
+  const deadlineModeSelect = document.getElementById("fDeadlineMode");
+  const deadlineDateInput = document.getElementById("fDeadlineDate");
+  deadlineModeSelect.addEventListener("change", ()=>{
+    deadlineDateInput.disabled = deadlineModeSelect.value === "toutes";
+  });
+
+  const prioritySwitch = document.getElementById("fPriority");
+  const prioritySub = document.getElementById("prioritySubOptions");
+  prioritySwitch.addEventListener("click", ()=>{
+    prioritySwitch.classList.toggle("on");
+    prioritySub.style.display = prioritySwitch.classList.contains("on") ? "flex" : "none";
+  });
+
+  const starredSwitch = document.getElementById("fStarred");
+  starredSwitch.addEventListener("click", ()=> starredSwitch.classList.toggle("on"));
+
+  const deadlinePrioritySwitch = document.getElementById("fDeadlinePriority");
+  const deadlinePrioritySub = document.getElementById("deadlinePrioritySubOptions");
+  deadlinePrioritySwitch.addEventListener("click", ()=>{
+    deadlinePrioritySwitch.classList.toggle("on");
+    deadlinePrioritySub.style.display = deadlinePrioritySwitch.classList.contains("on") ? "flex" : "none";
+  });
+
+  document.getElementById("filtersApply").addEventListener("click", ()=>{
+    const chipActive = (id)=> !!document.querySelector(`[data-chip="${id}"]`).classList.contains("active");
+    state.dashboardFilters = {
+      deadline: {
+        enabled: deadlineSwitch.classList.contains("on"),
+        mode: deadlineModeSelect.value,
+        date: deadlineDateInput.value || todayISO,
+      },
+      priority: {
+        enabled: prioritySwitch.classList.contains("on"),
+        levels: {
+          faible: chipActive("fPrioFaible"),
+          moyenne: chipActive("fPrioMoyenne"),
+          elevee: chipActive("fPrioElevee"),
+        }
+      },
+      starred: { enabled: starredSwitch.classList.contains("on") },
+      deadlinePriority: {
+        enabled: deadlinePrioritySwitch.classList.contains("on"),
+        passed: chipActive("fDpPassed"),
+        today: chipActive("fDpToday"),
+        after: chipActive("fDpAfter"),
+      },
+      logic,
+    };
+    closeModal();
+    renderStack();
+  });
+}
+
 async function openThemePickerModal(){
   const themes = (await idbGetAll("themes")).filter(t=>t.forSlots || t.forProjects).sort((a,b)=>(a.order||0)-(b.order||0));
   openModal(`
@@ -3080,6 +3528,42 @@ async function openThemePickerModal(){
 /* =========================================================================
    Drag & drop reorder (pointer-based, touch friendly)
    ========================================================================= */
+/* Après un vrai glisser (vertical ou horizontal), le navigateur envoie quand même un événement
+   "click" juste après le relâchement — sur l'élément qui se trouve maintenant sous le doigt,
+   qui n'est plus forcément le même qu'au départ après un réordonnancement. Sans ça, la tâche
+   qui atterrit à l'emplacement d'origine se retrouvait éditée par erreur.
+   On ne bloque que ce clic immédiat (fenêtre très courte) : un vrai tap séparé juste après,
+   par exemple sur "modifier" une fois les boutons révélés, doit rester fonctionnel du premier coup. */
+let lastGestureEndTime = 0;
+document.addEventListener("click", (e)=>{
+  if(performance.now() - lastGestureEndTime < 80){
+    e.stopPropagation();
+    e.preventDefault();
+  }
+}, true);
+
+/* Sécurité : si on touche ailleurs pendant qu'un titre/description est en édition, on force
+   explicitement la sauvegarde (blur) avant que l'autre interaction ne s'exécute, plutôt que de
+   compter uniquement sur le comportement implicite du focus qui peut être moins fiable sur mobile. */
+document.addEventListener("pointerdown", (e)=>{
+  const activeEditable = document.querySelector(".inline-editing");
+  if(activeEditable && activeEditable !== e.target && !e.target.closest(".inline-editing")){
+    activeEditable.blur();
+  }
+}, true);
+
+function startMomentumScroll(appEl, velocity){
+  // velocity en px/ms ; on la laisse s'amortir avec un peu de friction, comme un scroll natif.
+  let v = velocity;
+  function step(){
+    v *= 0.94;
+    if(Math.abs(v) < 0.02) return;
+    appEl.scrollTop -= v * 16;
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
 function closeSwipeRow(row){
   const content = row.querySelector(".swipe-content");
   if(content){
@@ -3112,6 +3596,8 @@ function makeSwipeOnly(root, itemSelector, handlers){
   function startSwipe(item, content, pointerId, downX, downY){
     let mode = null;
     let lastY = downY;
+    let lastMoveTime = performance.now();
+    let velocity = 0;
     const baseX = item.classList.contains("swiped-open") ? -SWIPE_REVEAL_PX : 0;
 
     function onMove(e){
@@ -3126,8 +3612,12 @@ function makeSwipeOnly(root, itemSelector, handlers){
       e.preventDefault();
       if(mode === "scrolling"){
         const appEl = document.getElementById("app");
+        const now = performance.now();
+        const dt = Math.max(now - lastMoveTime, 1);
+        velocity = (e.clientY - lastY) / dt;
         if(appEl) appEl.scrollTop -= (e.clientY - lastY);
         lastY = e.clientY;
+        lastMoveTime = now;
         return;
       }
       const next = Math.min(0, Math.max(-SWIPE_REVEAL_PX, baseX + dx));
@@ -3138,6 +3628,11 @@ function makeSwipeOnly(root, itemSelector, handlers){
       document.removeEventListener("pointermove", onMove);
       document.removeEventListener("pointerup", finish);
       document.removeEventListener("pointercancel", finish);
+      if(mode) lastGestureEndTime = performance.now();
+      if(mode === "scrolling" && Math.abs(velocity) > 0.05){
+        const appEl = document.getElementById("app");
+        if(appEl) startMomentumScroll(appEl, velocity);
+      }
       if(mode === "horizontal"){
         content.style.transition = "transform .2s ease";
         const dx = (e && e.clientX != null ? e.clientX : downX) - downX;
@@ -3182,13 +3677,13 @@ function makeDraggable(root, listSelector, itemSelector, storeKind, swipeHandler
   const list = root.querySelector(listSelector);
   if(!list) return;
 
-  const LONG_PRESS_MS = 1000;
+  const LONG_PRESS_MS = 650;
   const DECIDE_PX = 10;
 
   list.querySelectorAll(itemSelector).forEach(item=>{
     const content = item.querySelector(".swipe-content");
     item.addEventListener("pointerdown", (e)=>{
-      if(e.target.closest("[data-checktask]") || e.target.closest("select") || e.target.closest(".swipe-btn")) return;
+      if(e.target.closest("[data-checktask]") || e.target.closest("select") || e.target.closest(".swipe-btn") || item.classList.contains("editing-lock") || e.target.isContentEditable) return;
       startGesture(item, content, e.pointerId, e.clientX, e.clientY);
     });
   });
@@ -3196,6 +3691,8 @@ function makeDraggable(root, listSelector, itemSelector, storeKind, swipeHandler
   function startGesture(item, content, pointerId, downX, downY){
     let mode = null; // null | "vertical" | "horizontal" | "scrolling"
     let lastY = downY;
+    let lastMoveTime = performance.now();
+    let velocity = 0;
     const baseX = item.classList.contains("swiped-open") ? -SWIPE_REVEAL_PX : 0;
 
     const itemsInitial = [...list.querySelectorAll(itemSelector)];
@@ -3238,8 +3735,12 @@ function makeDraggable(root, listSelector, itemSelector, storeKind, swipeHandler
       if(mode === "scrolling"){
         e.preventDefault();
         const appEl = document.getElementById("app");
+        const now = performance.now();
+        const dt = Math.max(now - lastMoveTime, 1);
+        velocity = (e.clientY - lastY) / dt;
         if(appEl) appEl.scrollTop -= (e.clientY - lastY);
         lastY = e.clientY;
+        lastMoveTime = now;
         return;
       }
 
@@ -3284,6 +3785,11 @@ function makeDraggable(root, listSelector, itemSelector, storeKind, swipeHandler
       document.removeEventListener("pointermove", onMove);
       document.removeEventListener("pointerup", finish);
       document.removeEventListener("pointercancel", finish);
+      if(mode === "vertical" || mode === "horizontal") lastGestureEndTime = performance.now();
+      if(mode === "scrolling" && Math.abs(velocity) > 0.05){
+        const appEl = document.getElementById("app");
+        if(appEl) startMomentumScroll(appEl, velocity);
+      }
 
       if(mode === "vertical"){
         // Applique l'ordre final au vrai DOM. Comme le transform de chaque ligne représentait déjà
@@ -3391,6 +3897,7 @@ async function quickAdd(){
   state.language = settings.language || "fr";
   renderStack();
   await checkWeekRollover();
+  await checkAutoSkipHabits();
   checkForNewVersion();
 })();
 
@@ -3403,11 +3910,14 @@ if("serviceWorker" in navigator){
 }
 
 /* Sur mobile, rouvrir l'app depuis l'arrière-plan ne recharge pas forcément la page :
-   on revérifie donc aussi le changement de semaine et la disponibilité d'une nouvelle version
-   à chaque retour au premier plan. */
+   on revérifie donc aussi le changement de semaine, le skip automatique et la disponibilité
+   d'une nouvelle version à chaque retour au premier plan. */
 document.addEventListener("visibilitychange", ()=>{
   if(document.visibilityState === "visible"){
     checkWeekRollover();
+    checkAutoSkipHabits().then(()=>{
+      if(state.stack[state.stack.length-1].screen === "habitudes") renderStack();
+    });
     checkForNewVersion();
   }
 });
