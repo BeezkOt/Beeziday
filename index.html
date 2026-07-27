@@ -610,7 +610,7 @@
   .skip-btn.disabled{opacity:.4; pointer-events:none;}
   .habit-edit-days{display:flex; gap:6px; margin-bottom:16px;}
   .habit-edit-days .day-circle{
-    flex:1; aspect-ratio:1; border:none; font-family:var(--font); cursor:pointer;
+    border:none; font-family:var(--font); cursor:pointer;
   }
 
   .week-recap-medal{
@@ -680,7 +680,7 @@ const DB_VERSION = 1;
 /* Version de l'app, indépendante de la structure interne des données (DATA_SCHEMA_VERSION).
    Change-la à chaque mise à jour publiée, en même temps que CACHE_NAME dans service-worker.js
    et version.json (utilisés pour l'export et la détection de nouvelle version). */
-const APP_VERSION = "2.2.0";
+const APP_VERSION = "2.3.0";
 const DATA_SCHEMA_VERSION = 1;
 let db;
 
@@ -1566,6 +1566,46 @@ function renderTaskCard(task, isNext){
   </div>`;
 }
 
+/* Avance une date d'un intervalle de récurrence donné */
+function addRecurrenceInterval(dateStr, recurrence){
+  const d = parseISODate(dateStr);
+  switch(recurrence){
+    case "quotidienne": d.setDate(d.getDate()+1); break;
+    case "hebdomadaire": d.setDate(d.getDate()+7); break;
+    case "2semaines": d.setDate(d.getDate()+14); break;
+    case "mensuelle": d.setMonth(d.getMonth()+1); break;
+    case "annuelle": d.setFullYear(d.getFullYear()+1); break;
+    default: return dateStr;
+  }
+  return toISODate(d);
+}
+
+/* Bascule une tâche faite/à faire. Si elle vient d'être validée (pas dévalidée) et qu'elle a une
+   récurrence + une échéance, crée la prochaine occurrence — jamais avant, tant que celle-ci n'est
+   pas cochée, pour ne pas dupliquer une tâche encore en attente. */
+async function toggleTaskDone(taskId){
+  const task = (await idbGetAll("tasks")).find(t=>t.id===taskId);
+  if(!task) return;
+  const wasDone = task.status === "done";
+  task.status = wasDone ? "todo" : "done";
+  await idbPut("tasks", task);
+  if(!wasDone && task.recurrence && task.recurrence !== "aucune" && task.deadline){
+    await idbPut("tasks", {
+      id: uid(),
+      name: task.name,
+      themeId: task.themeId,
+      projectId: task.projectId,
+      priority: task.priority,
+      starred: task.starred,
+      description: task.description,
+      recurrence: task.recurrence,
+      deadline: addRecurrenceInterval(task.deadline, task.recurrence),
+      status: "active",
+      order: Date.now(),
+    });
+  }
+}
+
 function escapeHtml(str){
   const d = document.createElement("div");
   d.textContent = str || "";
@@ -2169,7 +2209,6 @@ function renderHabitCard(h, todayISO, weekDatesISOs, weekStartDay, allowSkip){
 
   const descKey = {faible:"descFaible", normale:"descNormale", elevee:"descElevee"}[state.habitsEnergyLevel] || "descNormale";
   const desc = h[descKey] || "";
-  const skipUsedThisWeek = weekDatesISOs.some(d=>completions[d] === "skip");
 
   return `
   <div class="habit-card ${doneNow?'done':''}" data-habit="${h.id}">
@@ -2181,7 +2220,6 @@ function renderHabitCard(h, todayISO, weekDatesISOs, weekStartDay, allowSkip){
       <div class="habit-top">
         <div class="check-circle ${checkedToday?'done':''}" data-checkhabit="${h.id}">${ICONS.check}</div>
         <div class="habit-title">${escapeHtml(h.name)}</div>
-        ${allowSkip && !checkedToday ? `<button class="skip-btn ${skipUsedThisWeek?'disabled':''}" data-skip-habit="${h.id}">${tr("passer")}</button>` : ""}
         <div class="habit-streak-badge">${ICONS.flame}${streak}</div>
       </div>
       ${desc ? `<p class="habit-desc">${escapeHtml(desc)}</p>` : ""}
@@ -2259,7 +2297,8 @@ function habitFormHtml(existing, weekDatesISOs){
     ${weekDatesISOs.map(iso=>{
       const val = existing.completions && existing.completions[iso];
       const d = parseISODate(iso);
-      return `<button type="button" class="day-circle ${val ? (val==='skip'?'skipped':'done') : ''}" data-toggle-day="${iso}">${DAY_LETTER[d.getDay()]}</button>`;
+      const original = val === "skip" ? "skip" : "";
+      return `<button type="button" class="day-circle ${val ? (val==='skip'?'skipped':'done') : ''}" data-toggle-day="${iso}" data-original="${original}">${DAY_LETTER[d.getDay()]}</button>`;
     }).join("")}
   </div>
   ` : ``}
@@ -2317,20 +2356,27 @@ async function openHabitModal(existing){
         const habit = (await idbGetAll("habits")).find(h=>h.id===existing.id);
         if(!habit) return;
         habit.completions = habit.completions || {};
-        // "skip" ou vide → validé ; validé → vide. Un jour "skip" devient donc "validé" en un clic,
-        // ce qui retire le skip et le rend à nouveau disponible pour le reste de la semaine.
-        if(habit.completions[iso] === true) delete habit.completions[iso];
-        else habit.completions[iso] = true;
+        // Dévalider une case ramène à son état d'origine (skip si elle était skip, sinon vide),
+        // plutôt que de toujours retomber sur "vide" — pour pouvoir faire l'aller-retour skip ↔ validé.
+        if(habit.completions[iso] === true){
+          if(btn.dataset.original === "skip") habit.completions[iso] = "skip";
+          else delete habit.completions[iso];
+        } else {
+          habit.completions[iso] = true;
+        }
         await idbPut("habits", habit);
         existing.completions = habit.completions;
+        const now = habit.completions[iso];
         btn.classList.remove("done","skipped");
-        if(habit.completions[iso]) btn.classList.add("done");
+        if(now === true) btn.classList.add("done");
+        else if(now === "skip") btn.classList.add("skipped");
       });
     });
   }
 
   document.getElementById("hCancel").addEventListener("click", closeModal);
   document.getElementById("hSave").addEventListener("click", saveHabitModal);
+  modalOutsideClickHandler = saveHabitModal;
   const delBtn = document.getElementById("hDelete");
   if(delBtn){
     attachTwoStepDelete(delBtn, async ()=>{
@@ -2631,9 +2677,8 @@ function attachScreenEvents(screenName, root){
 
     root.querySelectorAll("[data-checktask]").forEach(el=>{
       el.addEventListener("click", async ()=>{
-        const id = el.dataset.checktask;
-        const task = (await idbGetAll("tasks")).find(t=>t.id===id);
-        if(task){ task.status = task.status==="done" ? "todo" : "done"; await idbPut("tasks", task); renderStack(); }
+        await toggleTaskDone(el.dataset.checktask);
+        renderStack();
       });
     });
 
@@ -2811,24 +2856,6 @@ function attachScreenEvents(screenName, root){
         }
       });
     });
-    root.querySelectorAll("[data-skip-habit]").forEach(btn=>{
-      btn.addEventListener("click", async (e)=>{
-        e.stopPropagation();
-        if(btn.classList.contains("disabled")) return;
-        const id = btn.dataset.skipHabit;
-        const habit = (await idbGetAll("habits")).find(h=>h.id===id);
-        if(!habit) return;
-        const settings = Object.fromEntries((await idbGetAll("settings")).map(s=>[s.key,s.value]));
-        const weekStartDay = settings.weekStart ?? 1;
-        const weekISOs = getWeekDates(0, weekStartDay).map(toISODate);
-        habit.completions = habit.completions || {};
-        const alreadyUsed = weekISOs.some(d=>habit.completions[d] === "skip");
-        if(alreadyUsed) return;
-        habit.completions[toISODate(new Date())] = "skip";
-        await idbPut("habits", habit);
-        renderStack();
-      });
-    });
     makeSwipeOnly(root, ".habit-card", {
       onEdit: async (id)=>{
         const habit = (await idbGetAll("habits")).find(h=>h.id===id);
@@ -2955,9 +2982,8 @@ function attachItemRowEvents(root){
   root.querySelectorAll("[data-checktask]").forEach(el=>{
     el.addEventListener("click", async (e)=>{
       e.stopPropagation();
-      const id = el.dataset.checktask;
-      const task = (await idbGetAll("tasks")).find(t=>t.id===id);
-      if(task){ task.status = task.status==="done" ? "todo" : "done"; await idbPut("tasks", task); renderStack(); }
+      await toggleTaskDone(el.dataset.checktask);
+      renderStack();
     });
   });
   root.querySelectorAll('.item-row[data-kind="project"]').forEach(row=>{
@@ -3588,7 +3614,7 @@ function makeSwipeOnly(root, itemSelector, handlers){
     const content = item.querySelector(".swipe-content");
     if(!content) return;
     item.addEventListener("pointerdown", (e)=>{
-      if(e.target.closest("[data-checkhabit]") || e.target.closest(".swipe-btn") || e.target.closest("[data-skip-habit]")) return;
+      if(e.target.closest("[data-checkhabit]") || e.target.closest(".swipe-btn")) return;
       startSwipe(item, content, e.pointerId, e.clientX, e.clientY);
     });
   });

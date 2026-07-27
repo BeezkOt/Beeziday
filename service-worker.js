@@ -7,7 +7,7 @@
      3. APP_VERSION dans index.html (tout en haut du <script>)
    Les trois doivent toujours être identiques, mot pour mot. C'est ce qui permet à l'app de
    détecter qu'une nouvelle version existe et de rafraîchir son cache. */
-const CACHE_NAME = "beeziday-2.2.0";
+const CACHE_NAME = "beeziday-2.3.0";
 const ASSETS = [
   "./",
   "./index.html",
