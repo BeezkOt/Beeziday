@@ -76,7 +76,7 @@
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
-    padding-bottom: calc(var(--nav-h) + 24px);
+    padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 24px);
     background: var(--bg);
   }
 
@@ -86,12 +86,12 @@
     top:0; left:0; right:0;
     min-height: 100%;
     background: var(--bg);
-    padding: 20px 18px calc(var(--nav-h) + 24px);
+    padding: 20px 18px calc(var(--nav-h) + env(safe-area-inset-bottom) + 24px);
     transition: transform .3s cubic-bezier(.32,.72,.35,1);
     will-change: transform;
   }
   .screen.has-quickadd{
-    padding-bottom: calc(var(--nav-h) + 90px);
+    padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 90px);
   }
 
   .screen-header{
@@ -331,6 +331,11 @@
   .task-row-main{display:flex; align-items:center; gap:12px;}
   .task-name-col{flex:1; min-width:0;}
   .task-meta-row{display:flex; align-items:center; gap:6px; margin-top:3px;}
+  .task-desc-dashboard{
+    display:none; margin-top:8px; padding-top:8px; border-top:1px solid var(--border);
+    font-size:13px; color:var(--text-muted); line-height:1.5; word-break:break-word;
+  }
+  .task-desc-dashboard.open{display:block;}
   .task-meta-row .repeat-icon{width:13px; height:13px;}
   .task-desc{
     margin-top:10px; padding-top:10px; border-top:1px solid var(--border);
@@ -342,6 +347,18 @@
   .desc-icon{width:18px; height:18px; color:var(--text-muted); flex-shrink:0;}
   .inline-editing{
     outline:none; border-bottom:1.5px solid var(--accent); border-radius:2px; font-size:16px !important;
+  }
+  /* Pendant l'édition, on restaure le comportement tactile natif complet : sinon le double-tap
+     pour sélectionner un mot, le déplacement du curseur et le scroll dans le texte ne marchaient
+     pas, à cause du touch-action:none hérité de la ligne (nécessaire pour le glisser ailleurs). */
+  .item-row.editing-lock{
+    touch-action: auto; user-select: text; -webkit-user-select: text; -webkit-touch-callout: default;
+  }
+  .item-row.editing-lock .swipe-content{touch-action: auto;}
+  .inline-editing{user-select: text; -webkit-user-select: text; -webkit-touch-callout: default;}
+  .inline-edit-textarea{
+    width:100%; border:1px solid var(--accent); border-radius:var(--radius-sm); background:var(--surface);
+    font-family:var(--font); font-size:16px; color:var(--text); outline:none; padding:8px; resize:vertical;
   }
   .repeat-icon{width:15px;height:15px; color:var(--text-muted); flex-shrink:0;}
   .priority-icon{flex-shrink:0;}
@@ -372,7 +389,7 @@
 
   /* ---------- Quick add bar (magnetized) ---------- */
   .quick-add{
-    position: fixed; left:0; right:0; bottom: calc(var(--nav-h) + 10px);
+    position: fixed; left:0; right:0; bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 10px);
     display:flex; justify-content:center; z-index:20; pointer-events:none;
   }
   .quick-add-inner{
@@ -398,7 +415,7 @@
   /* ---------- Bottom nav ---------- */
   nav.bottom-nav{
     position: fixed; left:0; right:0; bottom:0;
-    height: var(--nav-h);
+    height: calc(var(--nav-h) + env(safe-area-inset-bottom));
     max-width:480px; margin:0 auto;
     background: var(--surface-raised);
     border-top: 1px solid var(--border);
@@ -468,6 +485,68 @@
     position:fixed; inset:0; background: rgba(35,41,31,.45);
     display:none; align-items:flex-end; justify-content:center; z-index:100;
   }
+
+  /* ---------- Carrousel de bienvenue (premier lancement) ---------- */
+  .onboarding-overlay{
+    position:fixed; inset:0; background: var(--bg);
+    display:none; align-items:center; justify-content:center; z-index:200;
+  }
+  .onboarding-box{
+    width:100%; max-width:480px; height:100%;
+    display:flex; flex-direction:column;
+    padding: calc(24px + env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom));
+  }
+  .onboarding-skip{
+    align-self:flex-end; background:none; border:none; color:var(--text-muted);
+    font-size:14px; font-weight:700; cursor:pointer; padding:8px;
+  }
+  .onboarding-body{
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; gap:18px;
+  }
+  .onboarding-icon-circle{
+    width:88px; height:88px; border-radius:50%; background:var(--accent-soft); color:var(--accent);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .onboarding-icon-circle svg{width:40px; height:40px; stroke:currentColor;}
+  .onboarding-inline-arrow{display:inline-flex; vertical-align:-4px; width:18px; height:18px; color:var(--accent);}
+  .onboarding-inline-arrow svg{width:18px; height:18px; display:block;}
+  .onboarding-body h2{font-size:21px; font-weight:800; color:var(--heading, var(--text));}
+  .onboarding-body p{font-size:14.5px; line-height:1.6; color:var(--text-muted); max-width:340px;}
+  .onboarding-dots{display:flex; justify-content:center; gap:7px; margin:20px 0;}
+  .onboarding-dot{width:7px; height:7px; border-radius:50%; background:var(--border);}
+  .onboarding-dot.active{background:var(--accent); width:20px; border-radius:4px; transition: width .2s ease;}
+  .onboarding-nav{display:flex; gap:10px;}
+  .onboarding-nav .btn-primary{flex:1;}
+  .onboarding-nav .btn-ghost{flex-shrink:0;}
+
+  /* ---------- Rapport hebdomadaire plein écran ---------- */
+  .recap-stars-arch{display:flex; justify-content:center; align-items:flex-end; gap:16px; margin-bottom:22px;}
+  .recap-stars-arch .recap-star{width:52px; height:52px; color:var(--border);}
+  .recap-stars-arch .recap-star svg{width:52px; height:52px; display:block;}
+  .recap-stars-arch .recap-star:nth-child(1){transform: translateY(16px) rotate(-10deg);}
+  .recap-stars-arch .recap-star:nth-child(2){transform: translateY(-8px);}
+  .recap-stars-arch .recap-star:nth-child(3){transform: translateY(16px) rotate(10deg);}
+  .recap-stars-arch .recap-star.filled.tier-gold{color:#F2C230;}
+  .recap-stars-arch .recap-star.filled.tier-silver{color:#B7C1CC;}
+  .recap-stars-arch .recap-star.filled.tier-bronze{color:#CD7F32;}
+  .recap-big-number{font-size:44px; font-weight:800; color:var(--heading, var(--text)); line-height:1;}
+  .recap-stats-row{display:flex; gap:10px; width:100%; max-width:340px; margin-top:8px;}
+  .recap-stat-box{
+    flex:1; background:var(--surface-raised); border:1px solid var(--border); border-radius:var(--radius-md);
+    padding:12px 8px; text-align:center;
+  }
+  .recap-stat-box .recap-stat-num{font-size:20px; font-weight:800; color:var(--text);}
+  .recap-stat-box .recap-stat-label{font-size:11px; color:var(--text-muted); margin-top:2px; line-height:1.3;}
+  .recap-cat-list{width:100%; max-width:340px; margin-top:14px; text-align:left;}
+  .recap-cat-row{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    padding:8px 0; border-bottom:1px solid var(--border); font-size:13.5px;
+  }
+  .recap-cat-row:last-child{border-bottom:none;}
+  .recap-cat-dot{width:9px; height:9px; border-radius:50%; flex-shrink:0;}
+  .recap-cat-name{flex:1; display:flex; align-items:center; gap:8px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .recap-cat-count{font-weight:700; color:var(--text); flex-shrink:0;}
   .modal-box{
     background: var(--surface-raised); width:100%; max-width:480px;
     border-radius: 22px 22px 0 0; padding:22px 20px calc(22px + env(safe-area-inset-bottom));
@@ -568,6 +647,8 @@
   }
   .slot-time{display:block; font-size:10px; font-weight:700; opacity:.9; line-height:1.3;}
   .slot-cat{display:block; font-size:12.5px; font-weight:700; line-height:1.3;}
+  .slot-repeat-icon{width:11px; height:11px; float:right; opacity:.85; color:#fff;}
+  .slot-repeat-icon svg{width:11px; height:11px; display:block;}
   .slot-note{display:block; font-size:11px; opacity:.9; line-height:1.3;}
 
   .field-error{
@@ -679,6 +760,14 @@
   <div class="modal-box" id="modalBox"></div>
 </div>
 
+<div class="onboarding-overlay" id="onboardingOverlay">
+  <div class="onboarding-box" id="onboardingBox"></div>
+</div>
+
+<div class="onboarding-overlay" id="weekRecapOverlay">
+  <div class="onboarding-box" id="weekRecapBox"></div>
+</div>
+
 <nav class="bottom-nav">
   <button class="nav-btn" data-tab="dashboard" aria-label="Dashboard">
     <svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>
@@ -706,7 +795,7 @@ const DB_VERSION = 1;
 /* Version de l'app, indépendante de la structure interne des données (DATA_SCHEMA_VERSION).
    Change-la à chaque mise à jour publiée, en même temps que CACHE_NAME dans service-worker.js
    et version.json (utilisés pour l'export et la détection de nouvelle version). */
-const APP_VERSION = "2.4.0";
+const APP_VERSION = "2.5.0";
 const DATA_SCHEMA_VERSION = 1;
 let db;
 
@@ -818,6 +907,8 @@ async function seedDefaults(){
   if(map.appTheme === undefined) await idbPut("settings", {key:"appTheme", value:"light"});
   if(map.allowHabitSkip === undefined) await idbPut("settings", {key:"allowHabitSkip", value:false});
   if(map.themeAutoEnabled === undefined) await idbPut("settings", {key:"themeAutoEnabled", value:false});
+  if(map.hasSeenOnboarding === undefined) await idbPut("settings", {key:"hasSeenOnboarding", value:false});
+  if(map.workDays === undefined) await idbPut("settings", {key:"workDays", value:[1,2,3,4,5]});
 }
 
 /* =========================================================================
@@ -843,6 +934,9 @@ const state = {
     logic: "and",
   },
   language: "fr",                  // langue courante de l'interface (fr/en)
+  onboardingIndex: 0,               // écran courant du carrousel de bienvenue
+  weekRecapIndex: 0,                // page courante du rapport hebdomadaire
+  weekRecapData: null,
 };
 
 const PRIORITY_RANK = {"elevee":3, "moyenne":2, "faible":1, "aucune":0, undefined:0, null:0};
@@ -858,7 +952,8 @@ const STRINGS = {
     bonjour: "Bonjour", bonsoir: "Bonsoir", bonApresMidi: "Bon après-midi",
     toutEstTermine: "Tout est terminé !", rienDAttente: "Rien d'autre en attente pour le moment.",
     etSiTuAvancais: (n)=>`Et si tu avançais sur « ${n} » ?`, passerACetteTache: "Passer à cette tâche",
-    tempsPourSoi: "Aucune plage horaire planifiée.<br>C'est l'occasion de prendre du temps pour toi :)", choisirCategorie: "Choisir une catégorie de projets",
+    creerUneTache: "Créer une tâche",
+    tempsPourSoi: "Aucune plage horaire planifiée.<br>C'est l'occasion de prendre du temps pour toi :)", choisirCategorie: "Afficher les prochaines tâches",
     categoriesLabel: "Catégories",
     planifierPlage: "Planifier une plage horaire",
     tachesCount: (done,total)=>`${done}/${total} tâches`,
@@ -878,6 +973,11 @@ const STRINGS = {
     ajouterNouvelleCategorie: "+ Ajouter une nouvelle catégorie",
     fermer: "Fermer",
     semaineOr: "Semaine en or !", msgOr: "Régularité parfaite cette semaine, bravo pour cet engagement 🥇",
+    suiviHabitudesPrefix: "Suivi d'habitudes :",
+    tachesEffecteesSemaine: "Tâches effectuées la semaine passée",
+    projetsTermines: "Projets terminés", tachesEtoileesTerminees: "Tâches étoilées terminées",
+    retour: "Retour", suivant: "Suivant",
+    afficherRapportSemaine: "Afficher le rapport de la semaine passée",
     semaineArgent: "Semaine en argent !", msgArgent: "Belle régularité cette semaine, continue comme ça 🥈",
     semaineBronze: "Semaine en bronze", msgBronze: "Chaque petit pas compte, la semaine prochaine ira encore mieux 🥉",
     nouvelleSemaine: "Nouvelle semaine !", msgNeutre: "La semaine passée a été plus calme, ce n'est pas grave : on repart à zéro.",
@@ -898,6 +998,8 @@ const STRINGS = {
     confirmerSuppressionRecurrente: "Cette tâche se répète. Que veux-tu supprimer ?",
     supprimerCetteOccurrence: "Uniquement cette occurrence",
     supprimerToutesOccurrences: "Cette occurrence et les suivantes",
+    confirmerSuppressionPlageRecurrente: "Cette plage se répète. Que veux-tu supprimer ?",
+    supprimerToutePlageSerie: "Toute la série",
     classementLabel: "Classement des tâches", classementManuel: "Manuel",
     classementEcheance: "Par échéance", classementPriorite: "Par priorité", classementEtoile: "Étoilées d'abord",
     tacheLieeLabel: "Tâche liée à la tâche précédente",
@@ -915,6 +1017,7 @@ const STRINGS = {
     creerTacheRapide: "Créer une nouvelle tâche rapidement", creerSousTacheRapide: "Créer une nouvelle sous-tâche",
     modifierCategorie: "Modifier la catégorie", nomCategorie: "Nom de la catégorie",
     prenom: "Prénom", langue: "Langue", premierJourSemaine: "Premier jour de la semaine", theme: "Thème",
+    joursOuvres: "Jours ouvrés",
     tonPrenom: "Ton prénom", francais: "Français", anglais: "English",
     clair: "Clair", sombre: "Sombre", creme: "Crème", themeAuto: "Automatique (suit le système)",
     themeAutoLabel: "Mode clair/sombre automatique",
@@ -951,6 +1054,7 @@ const STRINGS = {
     dimanche:"Dimanche", lundi:"Lundi", mardi:"Mardi", mercredi:"Mercredi", jeudi:"Jeudi", vendredi:"Vendredi", samedi:"Samedi",
     touteLaJournee: "Toute la journée", ajouterHabitude: "Ajouter une habitude", modifierHabitude: "Modifier une habitude",
     nomHabitude: "Nom de l'habitude", frequence: "Fréquence", tousLesJours: "Tous les jours", xFoisParSemaine: "X fois par semaine",
+    tousLesJoursOuvres: "Tous les jours ouvrés",
     combienFois: "Combien de fois par semaine", momentJournee: "Moment de la journée",
     descFaibleLabel: "Description — énergie faible (optionnelle)", descNormaleLabel: "Description — énergie normale (optionnelle)",
     descEleveeLabel: "Description — énergie élevée (optionnelle)",
@@ -961,7 +1065,8 @@ const STRINGS = {
     bonjour: "Good morning", bonsoir: "Good evening", bonApresMidi: "Good afternoon",
     toutEstTermine: "All done!", rienDAttente: "Nothing else pending right now.",
     etSiTuAvancais: (n)=>`How about working on "${n}"?`, passerACetteTache: "Switch to this task",
-    tempsPourSoi: "No time block planned.<br>It's a good moment to take some time for yourself :)", choisirCategorie: "Choose a project category",
+    creerUneTache: "Create a task",
+    tempsPourSoi: "No time block planned.<br>It's a good moment to take some time for yourself :)", choisirCategorie: "Show upcoming tasks",
     categoriesLabel: "Categories",
     planifierPlage: "Plan a time block",
     tachesCount: (done,total)=>`${done}/${total} tasks`,
@@ -981,6 +1086,11 @@ const STRINGS = {
     ajouterNouvelleCategorie: "+ Add a new category",
     fermer: "Close",
     semaineOr: "Golden week!", msgOr: "Perfect consistency this week, well done for the commitment 🥇",
+    suiviHabitudesPrefix: "Habit tracking:",
+    tachesEffecteesSemaine: "Tasks completed last week",
+    projetsTermines: "Projects completed", tachesEtoileesTerminees: "Starred tasks completed",
+    retour: "Back", suivant: "Next",
+    afficherRapportSemaine: "Show last week's report",
     semaineArgent: "Silver week!", msgArgent: "Great consistency this week, keep it up 🥈",
     semaineBronze: "Bronze week", msgBronze: "Every small step counts, next week will be even better 🥉",
     nouvelleSemaine: "New week!", msgNeutre: "Last week was quieter, that's alright — starting fresh.",
@@ -1001,6 +1111,8 @@ const STRINGS = {
     confirmerSuppressionRecurrente: "This task repeats. What would you like to delete?",
     supprimerCetteOccurrence: "Just this occurrence",
     supprimerToutesOccurrences: "This occurrence and the next ones",
+    confirmerSuppressionPlageRecurrente: "This time block repeats. What would you like to delete?",
+    supprimerToutePlageSerie: "The whole series",
     classementLabel: "Task sorting", classementManuel: "Manual",
     classementEcheance: "By due date", classementPriorite: "By priority", classementEtoile: "Starred first",
     tacheLieeLabel: "Linked to the previous task",
@@ -1018,6 +1130,7 @@ const STRINGS = {
     creerTacheRapide: "Quickly add a task", creerSousTacheRapide: "Add a new subtask",
     modifierCategorie: "Edit category", nomCategorie: "Category name",
     prenom: "First name", langue: "Language", premierJourSemaine: "First day of the week", theme: "Theme",
+    joursOuvres: "Working days",
     tonPrenom: "Your first name", francais: "Français", anglais: "English",
     clair: "Light", sombre: "Dark", creme: "Cream", themeAuto: "Automatic (follows system)",
     themeAutoLabel: "Automatic light/dark mode",
@@ -1054,6 +1167,7 @@ const STRINGS = {
     dimanche:"Sunday", lundi:"Monday", mardi:"Tuesday", mercredi:"Wednesday", jeudi:"Thursday", vendredi:"Friday", samedi:"Saturday",
     touteLaJournee: "All day", ajouterHabitude: "Add a habit", modifierHabitude: "Edit habit",
     nomHabitude: "Habit name", frequence: "Frequency", tousLesJours: "Every day", xFoisParSemaine: "X times a week",
+    tousLesJoursOuvres: "Every working day",
     combienFois: "How many times a week", momentJournee: "Time of day",
     descFaibleLabel: "Description — low energy (optional)", descNormaleLabel: "Description — normal energy (optional)",
     descEleveeLabel: "Description — high energy (optional)",
@@ -1112,6 +1226,12 @@ const ICONS = {
   repeat: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>`,
   cornerDownRight: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 10 20 15 15 20"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/></svg>`,
   skipForward: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 5 12 12 5 19"/><polyline points="12 5 19 12 12 19"/></svg>`,
+  tabDashboard: `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>`,
+  tabProjets: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7Z"/></svg>`,
+  tabPlages: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>`,
+  tabHabitudes: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 3 21 9 15 9"/></svg>`,
+  tabReglages: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>`,
+  sparkle: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2Z"/></svg>`,
   pencil: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`,
   coffeeCup: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3c.3 1 .1 1.6-.4 2.3-.6.8-.8 1.4-.4 2.4M13.5 3c.3 1 .1 1.6-.4 2.3-.6.8-.8 1.4-.4 2.4"/><path d="M4 9h13v5.5A4.5 4.5 0 0 1 12.5 19h-4A4.5 4.5 0 0 1 4 14.5V9Z"/><path d="M17 10.5h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M3 22.5h15"/></svg>`,
   close: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>`,
@@ -1267,13 +1387,53 @@ async function getAllActive(){
   };
 }
 
+/* Détermine si une plage (récurrente ou non) a une occurrence à la date donnée.
+   La date d'origine de la plage sert d'ancrage : les occurrences ne remontent jamais avant elle.
+   Le jour du mois/de l'année est "clampé" comme pour la récurrence des tâches (31 -> 30/28/29
+   -> 31 quand il revient), pour ne jamais dériver définitivement. */
+function slotOccursOn(slot, isoDate, workDays){
+  if(!slot.recurrence || slot.recurrence === "aucune") return isoDate === slot.date;
+  if(isoDate < slot.date) return false;
+  if(slot.exceptions && slot.exceptions.includes(isoDate)) return false;
+  const anchor = parseISODate(slot.date);
+  const cand = parseISODate(isoDate);
+  switch(slot.recurrence){
+    case "quotidienne": return true;
+    case "joursOuvres": {
+      const wd = (workDays && workDays.length) ? workDays : [1,2,3,4,5];
+      return wd.includes(cand.getDay());
+    }
+    case "hebdomadaire": {
+      const diffDays = Math.round((cand - anchor) / 86400000);
+      return diffDays % 7 === 0;
+    }
+    case "2semaines": {
+      const diffDays = Math.round((cand - anchor) / 86400000);
+      return diffDays % 14 === 0;
+    }
+    case "mensuelle": {
+      const targetDay = anchor.getDate();
+      const clampedDay = Math.min(targetDay, daysInMonth(cand.getFullYear(), cand.getMonth()));
+      const monthsDiff = (cand.getFullYear()-anchor.getFullYear())*12 + (cand.getMonth()-anchor.getMonth());
+      return monthsDiff >= 0 && cand.getDate() === clampedDay;
+    }
+    case "annuelle": {
+      const targetDay = anchor.getDate();
+      const clampedDay = Math.min(targetDay, daysInMonth(cand.getFullYear(), anchor.getMonth()));
+      return cand.getFullYear() >= anchor.getFullYear() && cand.getMonth() === anchor.getMonth() && cand.getDate() === clampedDay;
+    }
+    default: return false;
+  }
+}
+
 async function getCurrentTimeSlot(){
   const slots = await idbGetAll("timeslots");
+  const settings = Object.fromEntries((await idbGetAll("settings")).map(s=>[s.key,s.value]));
   const todayISO = toISODate(new Date());
   const now = new Date();
   const minutesNow = now.getHours()*60 + now.getMinutes();
   return slots.find(s=>{
-    if(s.date !== todayISO) return false;
+    if(!slotOccursOn(s, todayISO, settings.workDays)) return false;
     return minutesNow >= slotStartMinutes(s.start) && minutesNow < slotEndMinutes(s.end);
   }) || null;
 }
@@ -1339,6 +1499,14 @@ async function getLockedStandaloneTaskIds(tasks){
   return lockedIds;
 }
 
+/* Une occurrence récurrente déjà créée mais dont l'échéance est dans le futur ne doit jamais
+   être proposée sur le Dashboard avant cette date — elle reste visible seulement dans la liste
+   normale (ou la section "à venir" si séparée). */
+function isFutureRecurringInstance(t){
+  if(!t.recurrence || t.recurrence === "aucune" || !t.deadline) return false;
+  return t.deadline > toISODate(new Date());
+}
+
 async function buildCandidates(themeId, excludeId, applyFilters){
   if(applyFilters === undefined) applyFilters = true;
   const {projects, tasks} = await getAllActive();
@@ -1348,7 +1516,7 @@ async function buildCandidates(themeId, excludeId, applyFilters){
 
   const candidates = [
     ...projectCandidates.filter((p,i)=>!statuses[i].empty && !statuses[i].done).map(p=>({...p, kind:"project"})),
-    ...tasks.filter(t=>!t.projectId && (themeId===null || t.themeId === themeId) && t.status !== "done" && t.id !== excludeId && !lockedIds.has(t.id)).map(t=>({...t, kind:"task"}))
+    ...tasks.filter(t=>!t.projectId && (themeId===null || t.themeId === themeId) && t.status !== "done" && t.id !== excludeId && !lockedIds.has(t.id) && !isFutureRecurringInstance(t)).map(t=>({...t, kind:"task"}))
   ];
   return applyFilters ? candidates.filter(passesDashboardFilters) : candidates;
 }
@@ -1375,7 +1543,7 @@ async function pickItemAnyTheme(excludeId){
   const lockedIds = await getLockedStandaloneTaskIds(tasks);
   const candidates = [
     ...projectCandidates.filter((p,i)=>!statuses[i].empty && !statuses[i].done).map(p=>({...p, kind:"project"})),
-    ...tasks.filter(t=>!t.projectId && t.id !== excludeId && t.status !== "done" && !lockedIds.has(t.id)).map(t=>({...t, kind:"task"}))
+    ...tasks.filter(t=>!t.projectId && t.id !== excludeId && t.status !== "done" && !lockedIds.has(t.id) && !isFutureRecurringInstance(t)).map(t=>({...t, kind:"task"}))
   ];
   if(candidates.length === 0) return null;
   return sortByDashboardRule(candidates)[0];
@@ -1429,7 +1597,7 @@ async function getCurrentAndNextTask(item, themeId){
   const subtasks = await getSubtasks(item.id);
   const lockMap = computeLockStates(subtasks);
   const done = subtasks.filter(t=>t.status === "done").length;
-  const todo = subtasks.filter(t=>t.status !== "done" && !lockMap.get(t.id));
+  const todo = subtasks.filter(t=>t.status !== "done" && !lockMap.get(t.id) && !isFutureRecurringInstance(t));
   return {
     current: todo[0] || null,
     next: todo[1] || null,
@@ -1629,7 +1797,7 @@ async function renderDashboard(){
           </div>`;
         } else {
           const fallback = await pickItemAnyTheme(null);
-          bodyHtml += renderFinishedBox(fallback);
+          bodyHtml += renderFinishedBox(fallback, pickThemeId);
         }
       } else {
         const {current, next, progress, total, done} = await getCurrentAndNextTask(item, pickThemeId);
@@ -1656,7 +1824,7 @@ async function renderDashboard(){
         if(current){
           bodyHtml += renderTaskCard(current, false);
         } else {
-          bodyHtml += renderFinishedBox(await pickItemAnyTheme(item.id));
+          bodyHtml += renderFinishedBox(await pickItemAnyTheme(item.id), item.themeId);
         }
 
         if(current){
@@ -1703,12 +1871,13 @@ async function renderDashboard(){
 
 }
 
-function renderFinishedBox(suggestion){
+function renderFinishedBox(suggestion, themeId){
   if(!suggestion){
     return `
     <div class="finished-box">
       <p class="big">${tr("toutEstTermine")}</p>
       <p class="small">${tr("rienDAttente")}</p>
+      <button class="btn-choose" id="goCreateTaskBtn" data-create-theme="${themeId||''}">${tr("creerUneTache")}</button>
     </div>`;
   }
   return `
@@ -1730,7 +1899,9 @@ function renderTaskCard(task, isNext){
         <span class="task-deadline ${daysUntil(task.deadline)<=14?'soon':''}">${formatDeadline(task.deadline)}</span>
         ${task.recurrence && task.recurrence !== "aucune" ? `<span class="repeat-icon">${ICONS.repeat}</span>` : ""}
       </div>` : ""}
+      ${task.description ? `<div class="task-desc-dashboard" id="taskDescDash-${task.id}">${linkify(task.description)}</div>` : ""}
     </div>
+    ${task.description ? `<span class="desc-icon" data-toggle-desc-dash="${task.id}">${ICONS.note}</span>` : ""}
     ${priorityIcon(task.priority)}
     <div class="star ${task.starred ? '' : 'off'}">${ICONS.star}</div>
   </div>`;
@@ -1744,10 +1915,15 @@ function daysInMonth(year, month){ // month : 0-indexé
 /* targetDay est le jour du mois "voulu" (ex : 31), conservé tel quel d'occurrence en occurrence
    même quand un mois plus court oblige à le décaler (ex : 30 en avril) — pour qu'un mois de 31
    jours revienne bien sur le 31 plutôt que de dériver définitivement vers 30. */
-function addRecurrenceInterval(dateStr, recurrence, targetDay){
+function addRecurrenceInterval(dateStr, recurrence, targetDay, workDays){
   const d = parseISODate(dateStr);
   switch(recurrence){
     case "quotidienne": d.setDate(d.getDate()+1); return toISODate(d);
+    case "joursOuvres": {
+      const wd = (workDays && workDays.length) ? workDays : [1,2,3,4,5];
+      do{ d.setDate(d.getDate()+1); } while(!wd.includes(d.getDay()));
+      return toISODate(d);
+    }
     case "hebdomadaire": d.setDate(d.getDate()+7); return toISODate(d);
     case "2semaines": d.setDate(d.getDate()+14); return toISODate(d);
     case "mensuelle": {
@@ -1768,12 +1944,12 @@ function addRecurrenceInterval(dateStr, recurrence, targetDay){
 /* Calcule la prochaine échéance en rattrapant le retard : si la tâche validée était en retard
    de plusieurs jours, on avance d'autant d'intervalles que nécessaire pour ne jamais proposer
    une prochaine occurrence déjà dans le passé (au minimum aujourd'hui). */
-function nextRecurrenceDate(oldDeadline, recurrence, targetDay){
+function nextRecurrenceDate(oldDeadline, recurrence, targetDay, workDays){
   const todayISO = toISODate(new Date());
-  let next = addRecurrenceInterval(oldDeadline, recurrence, targetDay);
+  let next = addRecurrenceInterval(oldDeadline, recurrence, targetDay, workDays);
   let guard = 0;
   while(next < todayISO && guard < 1000){
-    next = addRecurrenceInterval(next, recurrence, targetDay);
+    next = addRecurrenceInterval(next, recurrence, targetDay, workDays);
     guard++;
   }
   return next;
@@ -1791,6 +1967,7 @@ async function toggleProjectDone(projectId){
   if(!project) return;
   if(project.status === "done"){
     project.status = "active";
+    project.completedAt = null;
     await idbPut("projects", project);
     renderStack();
     return;
@@ -1799,6 +1976,7 @@ async function toggleProjectDone(projectId){
   const allDone = subs.length > 0 && subs.every(t=>t.status==="done");
   if(allDone){
     project.status = "done";
+    project.completedAt = toISODate(new Date());
     await idbPut("projects", project);
     renderStack();
   } else {
@@ -1813,6 +1991,7 @@ async function toggleProjectDone(projectId){
     document.getElementById("cancelProjectDone").addEventListener("click", closeModal);
     document.getElementById("confirmProjectDoneAnyway").addEventListener("click", async ()=>{
       project.status = "done";
+      project.completedAt = toISODate(new Date());
       await idbPut("projects", project);
       closeModal();
       renderStack();
@@ -1831,14 +2010,17 @@ async function toggleTaskDone(taskId){
       task.nextOccurrenceId = null;
     }
     task.status = "todo";
+    task.completedAt = null;
     await idbPut("tasks", task);
     return;
   }
 
   task.status = "done";
+  task.completedAt = toISODate(new Date());
   await idbPut("tasks", task);
   if(task.recurrence && task.recurrence !== "aucune" && task.deadline){
     const targetDay = task.recurrenceDay || parseISODate(task.deadline).getDate();
+    const settings = Object.fromEntries((await idbGetAll("settings")).map(s=>[s.key,s.value]));
     const newId = uid();
     await idbPut("tasks", {
       id: newId,
@@ -1850,7 +2032,7 @@ async function toggleTaskDone(taskId){
       description: task.description,
       recurrence: task.recurrence,
       recurrenceDay: targetDay,
-      deadline: nextRecurrenceDate(task.deadline, task.recurrence, targetDay),
+      deadline: nextRecurrenceDate(task.deadline, task.recurrence, targetDay, settings.workDays),
       status: "active",
       order: Date.now(),
     });
@@ -2233,9 +2415,10 @@ function renderDayButtons(weekDates, selectedDate, todayISO){
 }
 
 async function renderDayGrid(selectedDate){
-  const [allSlots, themes] = await Promise.all([idbGetAll("timeslots"), idbGetAll("themes")]);
+  const [allSlots, themes, settingsRaw] = await Promise.all([idbGetAll("timeslots"), idbGetAll("themes"), idbGetAll("settings")]);
+  const settings = Object.fromEntries(settingsRaw.map(s=>[s.key,s.value]));
   const themeMap = Object.fromEntries(themes.map(t=>[t.id, t]));
-  const daySlots = allSlots.filter(s=>s.date === selectedDate);
+  const daySlots = allSlots.filter(s=>slotOccursOn(s, selectedDate, settings.workDays));
 
   let rows = "";
   for(let h=0; h<24; h++){
@@ -2257,7 +2440,8 @@ async function renderDayGrid(selectedDate){
     const theme = themeMap[s.themeId];
     const top = slotStartMinutes(s.start) * (HOUR_ROW_PX/60);
     const height = Math.max((slotEndMinutes(s.end) - slotStartMinutes(s.start)) * (HOUR_ROW_PX/60), 24);
-    return `<div class="slot-block" data-slot="${s.id}" style="top:${top}px;height:${height}px;background:${theme?theme.color:'#8A8F80'}">
+    return `<div class="slot-block" data-slot="${s.id}" data-slot-date="${selectedDate}" style="top:${top}px;height:${height}px;background:${theme?theme.color:'#8A8F80'}">
+      ${s.recurrence && s.recurrence !== "aucune" ? `<span class="slot-repeat-icon">${ICONS.repeat}</span>` : ""}
       <span class="slot-cat">${theme?escapeHtml(themeDisplayName(theme)):"?"}</span>
       ${s.note ? `<span class="slot-note">${escapeHtml(s.note)}</span>` : ""}
       <span class="slot-time">${s.start}–${s.end}</span>
@@ -2276,9 +2460,9 @@ async function renderPlages(){
   const weekDates = getWeekDates(state.plagesWeekOffset, weekStartDay);
   const weekISOs = weekDates.map(toISODate);
   const allSlots = await idbGetAll("timeslots");
-  const weekHasSlots = allSlots.some(s=>weekISOs.includes(s.date));
+  const weekHasSlots = weekISOs.some(iso => allSlots.some(s=>slotOccursOn(s, iso, settings.workDays)));
   const prevWeekISOs = getWeekDates(state.plagesWeekOffset-1, weekStartDay).map(toISODate);
-  const prevWeekHasSlots = allSlots.some(s=>prevWeekISOs.includes(s.date));
+  const prevWeekHasSlots = prevWeekISOs.some(iso => allSlots.some(s=>slotOccursOn(s, iso, settings.workDays)));
 
   let html = `
   <div class="screen-header">
@@ -2317,9 +2501,9 @@ async function copyPreviousWeekSlots(){
   const prevWeek = getWeekDates(state.plagesWeekOffset-1, weekStartDay).map(toISODate);
   const allSlots = await idbGetAll("timeslots");
   for(let i=0;i<7;i++){
-    const daySlots = allSlots.filter(s=>s.date === prevWeek[i]);
+    const daySlots = allSlots.filter(s=>slotOccursOn(s, prevWeek[i], settings.workDays));
     for(const s of daySlots){
-      await idbPut("timeslots", {id:uid(), date:curWeek[i], start:s.start, end:s.end, themeId:s.themeId});
+      await idbPut("timeslots", {id:uid(), date:curWeek[i], start:s.start, end:s.end, themeId:s.themeId, note:s.note||""});
     }
   }
 }
@@ -2344,6 +2528,16 @@ function slotFormHtml(existing, defaultStart, defaultEnd, themesList){
   </select>
   <button type="button" class="link-add-cat" id="slotAddCatBtn">${tr("ajouterNouvelleCategorie")}</button>
   <div id="slotNewCatForm"></div>
+  <label>${tr("recurrenceLabel")}</label>
+  <select id="mSlotRecurrence">
+    <option value="aucune">${tr("aucuneRec")}</option>
+    <option value="quotidienne">${tr("tousLesJours")}</option>
+    <option value="joursOuvres">${tr("tousLesJoursOuvres")}</option>
+    <option value="hebdomadaire">${tr("toutesLesSemaines")}</option>
+    <option value="2semaines">${tr("toutesLes2Semaines")}</option>
+    <option value="mensuelle">${tr("tousLesMois")}</option>
+    <option value="annuelle">${tr("tousLesAns")}</option>
+  </select>
   <label>${tr("description")}</label>
   <input type="text" id="mSlotNote" placeholder="${tr("exSlotNote")}" maxlength="60" value="${existing && existing.note ? escapeHtml(existing.note) : ""}">
   <div class="field-error" id="slotError"></div>
@@ -2354,31 +2548,64 @@ function slotFormHtml(existing, defaultStart, defaultEnd, themesList){
   </div>`;
 }
 
-async function openSlotModal(existing, date, hour){
+async function openSlotModal(existing, date, hour, occurrenceDate){
   const themes = (await idbGetAll("themes")).filter(t=>(t.forProjects || t.forSlots) && !t.isDefault).sort((a,b)=>(a.order||0)-(b.order||0));
   const defaultStart = existing ? existing.start : (hour != null ? `${String(hour).padStart(2,"0")}:00` : "09:00");
   const defaultEnd = existing ? existing.end : (hour != null ? (hour===23 ? "00:00" : `${String(hour+1).padStart(2,"0")}:00`) : "10:00");
-  slotModalContext = {existing, date: existing ? existing.date : date};
+  slotModalContext = {existing, date: existing ? (occurrenceDate || existing.date) : date, occurrenceDate: occurrenceDate || null};
 
   openModal(slotFormHtml(existing, defaultStart, defaultEnd, themes));
   const themeSelect = document.getElementById("mSlotTheme");
   themeSelect.value = existing ? existing.themeId : (themes[0] ? themes[0].id : "");
+  document.getElementById("mSlotRecurrence").value = existing ? (existing.recurrence || "aucune") : "aucune";
 
   document.getElementById("mSlotCancel").addEventListener("click", closeModal);
   document.getElementById("mSlotSave").addEventListener("click", saveSlotModal);
+  modalOutsideClickHandler = saveSlotModal;
   document.getElementById("slotAddCatBtn").addEventListener("click", ()=>{
     document.getElementById("slotNewCatForm").innerHTML = slotNewCatFormHtml();
     attachSlotNewCatEvents();
   });
   const delBtn = document.getElementById("mSlotDelete");
   if(delBtn){
-    attachTwoStepDelete(delBtn, async ()=>{
-      await idbDelete("timeslots", existing.id);
-      state.currentSlotThemeOverride = null;
-      state.currentItemOverride = null;
-      closeModal();
-      renderStack();
-    });
+    if(existing && existing.recurrence && existing.recurrence !== "aucune"){
+      delBtn.addEventListener("click", ()=>{
+        openModal(`
+          <h3>${tr("supprimer")}</h3>
+          <p style="font-size:14px; line-height:1.5; margin-bottom:18px;">${tr("confirmerSuppressionPlageRecurrente")}</p>
+          <div class="modal-actions" style="flex-direction:column; gap:8px;">
+            <button class="btn-delete" id="delOneSlotOcc" style="width:100%;">${tr("supprimerCetteOccurrence")}</button>
+            <button class="btn-delete" id="delAllSlotOcc" style="width:100%;">${tr("supprimerToutePlageSerie")}</button>
+            <button class="btn-ghost" id="cancelSlotRecDelete" style="width:100%;">${tr("annuler")}</button>
+          </div>
+        `);
+        document.getElementById("cancelSlotRecDelete").addEventListener("click", closeModal);
+        document.getElementById("delOneSlotOcc").addEventListener("click", async ()=>{
+          const occDate = slotModalContext.occurrenceDate || existing.date;
+          const exceptions = [...(existing.exceptions || []), occDate];
+          await idbPut("timeslots", {...existing, exceptions});
+          state.currentSlotThemeOverride = null;
+          state.currentItemOverride = null;
+          closeModal();
+          renderStack();
+        });
+        document.getElementById("delAllSlotOcc").addEventListener("click", async ()=>{
+          await idbDelete("timeslots", existing.id);
+          state.currentSlotThemeOverride = null;
+          state.currentItemOverride = null;
+          closeModal();
+          renderStack();
+        });
+      });
+    } else {
+      attachTwoStepDelete(delBtn, async ()=>{
+        await idbDelete("timeslots", existing.id);
+        state.currentSlotThemeOverride = null;
+        state.currentItemOverride = null;
+        closeModal();
+        renderStack();
+      });
+    }
   }
 }
 
@@ -2427,6 +2654,7 @@ async function saveSlotModal(){
 
   const obj = existing ? {...existing} : {id: uid(), date};
   obj.start = start; obj.end = end; obj.themeId = themeId; obj.note = note;
+  obj.recurrence = document.getElementById("mSlotRecurrence").value;
   await idbPut("timeslots", obj);
   // Une plage vient d'être modifiée : on efface les bascules manuelles du Dashboard pour qu'il
   // retrouve la vraie plage/catégorie actuelle au lieu de rester bloqué sur un ancien choix.
@@ -2854,18 +3082,83 @@ function weekRecapMessage(score){
   return {tier:"", title:tr("nouvelleSemaine"), msg:tr("msgNeutre")};
 }
 
-function showWeekRecapModal(score){
+async function showWeekRecapFullscreen(prevWeekDates){
+  const score = await computeWeekScoreForDates(prevWeekDates);
   const {tier, title, msg} = weekRecapMessage(score);
-  const starsHtml = [1,2,3].map(n=>`<span class="score-star recap-star ${n<=score?'filled tier-'+tier:''}">${ICONS.star}</span>`).join("");
-  openModal(`
-    <h3 style="text-align:center;">${title}</h3>
-    <div style="display:flex; justify-content:center; gap:6px; margin:4px 0 16px;">${starsHtml}</div>
-    <p style="text-align:center; font-size:14px; color:var(--text); margin-bottom:18px;">${msg}</p>
-    <div class="modal-actions" style="justify-content:center;">
-      <button class="btn-primary" id="recapClose">${tr("fermer")}</button>
+
+  const [tasks, projects, themes] = await Promise.all([idbGetAll("tasks"), idbGetAll("projects"), idbGetAll("themes")]);
+  const doneTasks = tasks.filter(t=>t.completedAt && prevWeekDates.includes(t.completedAt));
+  const doneProjects = projects.filter(p=>p.completedAt && prevWeekDates.includes(p.completedAt));
+  const starredDone = doneTasks.filter(t=>t.starred).length;
+
+  const byTheme = {};
+  doneTasks.forEach(t=>{ byTheme[t.themeId] = (byTheme[t.themeId]||0) + 1; });
+  const themeMap = Object.fromEntries(themes.map(t=>[t.id, t]));
+  const catRows = Object.entries(byTheme)
+    .map(([themeId, count])=>({theme: themeMap[themeId], count}))
+    .filter(r=>r.theme)
+    .sort((a,b)=>b.count - a.count);
+
+  state.weekRecapData = {tier, title, msg, score, doneCount: doneTasks.length, projectsDoneCount: doneProjects.length, starredDone, catRows};
+  state.weekRecapIndex = 0;
+  renderWeekRecap();
+  document.getElementById("weekRecapOverlay").style.display = "flex";
+}
+
+function renderWeekRecap(){
+  const d = state.weekRecapData;
+  const i = state.weekRecapIndex || 0;
+  const box = document.getElementById("weekRecapBox");
+  const starsHtml = [1,2,3].map(n=>`<span class="score-star recap-star ${n<=d.score?'filled tier-'+d.tier:''}">${ICONS.star}</span>`).join("");
+
+  let pageHtml;
+  if(i === 0){
+    pageHtml = `
+      <div class="recap-stars-arch">${starsHtml}</div>
+      <h2>${tr("suiviHabitudesPrefix")} ${d.title}</h2>
+      <p>${d.msg}</p>`;
+  } else {
+    pageHtml = `
+      <div class="recap-big-number">${d.doneCount}</div>
+      <p style="margin-top:-8px;">${tr("tachesEffecteesSemaine")}</p>
+      <div class="recap-stats-row">
+        <div class="recap-stat-box"><div class="recap-stat-num">${d.projectsDoneCount}</div><div class="recap-stat-label">${tr("projetsTermines")}</div></div>
+        <div class="recap-stat-box"><div class="recap-stat-num">${d.starredDone}</div><div class="recap-stat-label">${tr("tachesEtoileesTerminees")}</div></div>
+      </div>
+      ${d.catRows.length ? `<div class="recap-cat-list">${d.catRows.map(r=>`
+        <div class="recap-cat-row">
+          <span class="recap-cat-name"><span class="recap-cat-dot" style="background:${r.theme.color}"></span>${escapeHtml(themeDisplayName(r.theme))}</span>
+          <span class="recap-cat-count">${r.count}</span>
+        </div>
+      `).join("")}</div>` : ""}`;
+  }
+
+  box.innerHTML = `
+    <button class="onboarding-skip" id="weekRecapClose">${tr("fermer")}</button>
+    <div class="onboarding-body">${pageHtml}</div>
+    <div class="onboarding-dots">
+      <span class="onboarding-dot ${i===0?'active':''}" data-recap-dot="0"></span>
+      <span class="onboarding-dot ${i===1?'active':''}" data-recap-dot="1"></span>
     </div>
-  `);
-  document.getElementById("recapClose").addEventListener("click", closeModal);
+    <div class="onboarding-nav">
+      ${i>0 ? `<button class="btn-ghost" id="weekRecapPrev">${tr("retour")}</button>` : ""}
+      <button class="btn-primary" id="weekRecapNext">${i===0 ? tr("suivant") : tr("fermer")}</button>
+    </div>
+  `;
+  document.getElementById("weekRecapClose").addEventListener("click", closeWeekRecap);
+  document.getElementById("weekRecapNext").addEventListener("click", ()=>{
+    if(i===0){ state.weekRecapIndex = 1; renderWeekRecap(); }
+    else closeWeekRecap();
+  });
+  const prevBtn = document.getElementById("weekRecapPrev");
+  if(prevBtn) prevBtn.addEventListener("click", ()=>{ state.weekRecapIndex = 0; renderWeekRecap(); });
+  box.querySelectorAll("[data-recap-dot]").forEach(dot=>{
+    dot.addEventListener("click", ()=>{ state.weekRecapIndex = parseInt(dot.dataset.recapDot, 10); renderWeekRecap(); });
+  });
+}
+
+function closeWeekRecap(){
+  document.getElementById("weekRecapOverlay").style.display = "none";
 }
 
 /* Si l'option est activée dans les réglages, marque automatiquement UN jour manqué (dans le
@@ -2908,8 +3201,7 @@ async function checkWeekRollover(){
     const prevWeekDates = [];
     let d = parseISODate(last);
     for(let i=0;i<7;i++){ prevWeekDates.push(toISODate(d)); d.setDate(d.getDate()+1); }
-    const score = await computeWeekScoreForDates(prevWeekDates);
-    showWeekRecapModal(score);
+    showWeekRecapFullscreen(prevWeekDates);
   }
   await idbPut("settings", {key:"lastSeenWeekStart", value: curWeekStartISO});
 }
@@ -2951,6 +3243,79 @@ function dayLabelsFull(){
 }
 
 const THEME_BG = {light:"#EFF1EA", dark:"#1C211A", cream:"#F6EFE1"};
+/* =========================================================================
+   Carrousel de bienvenue (premier lancement)
+   ========================================================================= */
+const ONBOARDING_SLIDES = {
+  fr: [
+    {icon:"check", title:"Bienvenue sur Beeziday", text:"Organisez vos projets, travaillez sur une tâche à la fois en évitant les distractions, planifiez des plages de temps sur votre journée et traquez vos habitudes.\n\nVoici un tour rapide des fonctionnalités de Beeziday", trailingArrow:true},
+    {icon:"tabDashboard", title:"Le Dashboard", text:"L'écran d'accueil de l'app. C'est ici que s'affichent les prochaines tâches à effectuer, selon l'heure et le planning de la journée. Il est possible de filtrer et classer les tâches de différentes façons."},
+    {icon:"tabProjets", title:"Catégories et projets", text:"Organisez vos tâches par catégories, avec ou sans projet. Glissez une tâche vers la gauche pour la modifier, la supprimer ou la marquer prioritaire. Elles peuvent aussi se répéter automatiquement."},
+    {icon:"tabPlages", title:"Planning", text:"Planifiez des créneaux sur votre journée et associez-les à une catégorie de projets afin d'afficher uniquement les tâches de cette catégorie à des heures données. Ils peuvent se répéter (tous les jours, semaines ou mois)."},
+    {icon:"tabHabitudes", title:"Habitudes", text:"Suivez vos habitudes quotidiennes ou hebdomadaires, avec un score sur 3 étoiles chaque semaine. Un jour manqué peut être automatiquement marqué comme passé, une fois par semaine."},
+    {icon:"tabReglages", title:"Réglages", text:"Personnalisez le thème (clair, sombre ou automatique), le premier jour de votre semaine, les jours ouvrés, et pensez à exporter vos données régulièrement pour les garder en sécurité."},
+  ],
+  en: [
+    {icon:"check", title:"Welcome to Beeziday", text:"Organize your projects, work on one task at a time while avoiding distractions, plan time blocks throughout your day, and track your habits.\n\nHere's a quick tour of Beeziday's features", trailingArrow:true},
+    {icon:"tabDashboard", title:"The Dashboard", text:"The app's home screen. This is where the next tasks to work on appear, based on the time and your daily schedule. You can filter and sort tasks in different ways."},
+    {icon:"tabProjets", title:"Categories and projects", text:"Organize your tasks by category, with or without a project. Swipe a task left to edit it, delete it, or mark it as priority. Tasks can also repeat automatically."},
+    {icon:"tabPlages", title:"Schedule", text:"Plan time blocks throughout your day and link them to a project category, so only that category's tasks show up during those hours. They can repeat (daily, weekly, or monthly)."},
+    {icon:"tabHabitudes", title:"Habits", text:"Track your daily or weekly habits, with a 3-star score each week. A missed day can be automatically marked as skipped, once a week."},
+    {icon:"tabReglages", title:"Settings", text:"Customize the theme (light, dark, or automatic), the first day of your week, working days, and remember to export your data regularly to keep it safe."},
+  ],
+};
+
+function renderOnboarding(){
+  const slides = ONBOARDING_SLIDES[state.language] || ONBOARDING_SLIDES.fr;
+  const i = Math.min(state.onboardingIndex || 0, slides.length - 1);
+  const slide = slides[i];
+  const isLast = i === slides.length - 1;
+  const box = document.getElementById("onboardingBox");
+  box.innerHTML = `
+    <button class="onboarding-skip" id="onboardingSkip">${state.language==="en"?"Skip":"Passer"}</button>
+    <div class="onboarding-body">
+      <div class="onboarding-icon-circle">${ICONS[slide.icon]}</div>
+      <h2>${escapeHtml(slide.title)}</h2>
+      <p>${escapeHtml(slide.text).replace(/\n\n/g,"<br><br>")}${slide.trailingArrow?` <span class="onboarding-inline-arrow">${ICONS.chevRight}</span>`:""}</p>
+    </div>
+    <div class="onboarding-dots">
+      ${slides.map((_,n)=>`<span class="onboarding-dot ${n===i?'active':''}" data-dot="${n}"></span>`).join("")}
+    </div>
+    <div class="onboarding-nav">
+      ${i>0 ? `<button class="btn-ghost" id="onboardingPrev">${state.language==="en"?"Back":"Retour"}</button>` : ""}
+      <button class="btn-primary" id="onboardingNext">${isLast ? (state.language==="en"?"Get started":"Commencer") : (state.language==="en"?"Next":"Suivant")}</button>
+    </div>
+  `;
+  document.getElementById("onboardingSkip").addEventListener("click", closeOnboarding);
+  document.getElementById("onboardingNext").addEventListener("click", ()=>{
+    if(isLast){ closeOnboarding(); return; }
+    state.onboardingIndex = i + 1;
+    renderOnboarding();
+  });
+  const prevBtn = document.getElementById("onboardingPrev");
+  if(prevBtn) prevBtn.addEventListener("click", ()=>{
+    state.onboardingIndex = i - 1;
+    renderOnboarding();
+  });
+  box.querySelectorAll("[data-dot]").forEach(dot=>{
+    dot.addEventListener("click", ()=>{
+      state.onboardingIndex = parseInt(dot.dataset.dot, 10);
+      renderOnboarding();
+    });
+  });
+}
+
+function showOnboarding(){
+  state.onboardingIndex = 0;
+  renderOnboarding();
+  document.getElementById("onboardingOverlay").style.display = "flex";
+}
+
+async function closeOnboarding(){
+  document.getElementById("onboardingOverlay").style.display = "none";
+  await idbPut("settings", {key:"hasSeenOnboarding", value:true});
+}
+
 function applyTheme(themeName){
   const name = themeName || "light";
   document.body.className = "theme-" + name;
@@ -3038,6 +3403,19 @@ async function renderReglages(){
   </div>
 
   <div class="settings-group">
+    <label class="settings-label">${tr("joursOuvres")}</label>
+    <div class="habit-edit-days" id="rWorkDays">
+      ${(()=>{
+        const startDay = settings.weekStart ?? 1;
+        return Array.from({length:7}, (_,i)=>(startDay+i)%7);
+      })().map(d=>{
+        const on = (settings.workDays || [1,2,3,4,5]).includes(d);
+        return `<button type="button" class="day-circle ${on?'done':''}" data-workday="${d}">${DAY_LETTER[d]}</button>`;
+      }).join("")}
+    </div>
+  </div>
+
+  <div class="settings-group">
     <label class="settings-label">${tr("theme")}</label>
     <select id="rTheme">
       <option value="light" ${(!settings.appTheme||settings.appTheme==='light')?'selected':''}>${tr("clair")}</option>
@@ -3063,6 +3441,11 @@ async function renderReglages(){
       </div>
       <p class="filter-card-desc">${tr("skipNote")}</p>
     </div>
+  </div>
+
+  <div class="settings-group">
+    <button class="btn-ghost" id="replayOnboardingBtn" style="display:block;width:100%;margin-bottom:10px;">${state.language==="en"?"Replay tutorial":"Revoir le didacticiel"}</button>
+    <button class="btn-ghost" id="showWeekRecapBtn" style="display:block;width:100%;">${tr("afficherRapportSemaine")}</button>
   </div>
 
   <div class="settings-group">
@@ -3163,6 +3546,25 @@ function attachScreenEvents(screenName, root){
         await toggleTaskDone(el.dataset.checktask);
         renderStack();
       });
+    });
+
+    root.querySelectorAll("[data-toggle-desc-dash]").forEach(el=>{
+      el.addEventListener("click", ()=>{
+        const target = root.querySelector("#taskDescDash-"+el.dataset.toggleDescDash);
+        if(target) target.classList.toggle("open");
+      });
+    });
+
+    const goCreateBtn = root.querySelector("#goCreateTaskBtn");
+    if(goCreateBtn) goCreateBtn.addEventListener("click", ()=>{
+      const themeId = goCreateBtn.dataset.createTheme;
+      if(themeId && themeId !== "__all__"){
+        state.stack = [{screen:"catDetail", themeId}];
+      } else {
+        state.stack = [{screen:"cats"}];
+      }
+      setActiveTab("projets");
+      renderStack("none");
     });
 
     root.querySelectorAll("[data-switch-theme]").forEach(btn=>{
@@ -3339,7 +3741,7 @@ function attachScreenEvents(screenName, root){
       block.addEventListener("click", async (e)=>{
         e.stopPropagation();
         const slot = (await idbGetAll("timeslots")).find(s=>s.id===block.dataset.slot);
-        if(slot) openSlotModal(slot, null, null);
+        if(slot) openSlotModal(slot, null, null, block.dataset.slotDate);
       });
     });
   }
@@ -3393,6 +3795,17 @@ function attachScreenEvents(screenName, root){
     });
     root.querySelector("#rWeekStart").addEventListener("change", async (e)=>{
       await idbPut("settings", {key:"weekStart", value: parseInt(e.target.value, 10)});
+      renderStack();
+    });
+    root.querySelectorAll("#rWorkDays [data-workday]").forEach(btn=>{
+      btn.addEventListener("click", async ()=>{
+        const d = parseInt(btn.dataset.workday, 10);
+        const settings = Object.fromEntries((await idbGetAll("settings")).map(s=>[s.key,s.value]));
+        let days = settings.workDays || [1,2,3,4,5];
+        days = days.includes(d) ? days.filter(x=>x!==d) : [...days, d];
+        await idbPut("settings", {key:"workDays", value: days});
+        btn.classList.toggle("done");
+      });
     });
     root.querySelector("#rTheme").addEventListener("change", async (e)=>{
       await idbPut("settings", {key:"appTheme", value: e.target.value});
@@ -3410,6 +3823,14 @@ function attachScreenEvents(screenName, root){
       await idbPut("settings", {key:"allowHabitSkip", value: on});
     });
 
+    const replayBtn = root.querySelector("#replayOnboardingBtn");
+    if(replayBtn) replayBtn.addEventListener("click", showOnboarding);
+    const showRecapBtn = root.querySelector("#showWeekRecapBtn");
+    if(showRecapBtn) showRecapBtn.addEventListener("click", async ()=>{
+      const s = Object.fromEntries((await idbGetAll("settings")).map(x=>[x.key,x.value]));
+      const prevWeekDates = getWeekDates(-1, s.weekStart ?? 1).map(toISODate);
+      showWeekRecapFullscreen(prevWeekDates);
+    });
     root.querySelector("#exportDataBtn").addEventListener("click", ()=>{
       openModal(`
         <h3>${tr("exportTitle")}</h3>
@@ -3532,7 +3953,7 @@ function attachItemRowEvents(root){
   });
   root.querySelectorAll("[data-inline-name]").forEach(nameEl=>{
     nameEl.addEventListener("click", (e)=>{
-      if(nameEl.isContentEditable) return;
+      if(nameEl.isContentEditable){ e.stopPropagation(); return; }
       const row = nameEl.closest(".item-row");
       const hasDesc = row && row.dataset.hasDesc === "1";
       if(hasDesc && !row.classList.contains("desc-open")){
@@ -3545,7 +3966,7 @@ function attachItemRowEvents(root){
   });
   root.querySelectorAll("[data-inline-desc]").forEach(descEl=>{
     descEl.addEventListener("click", (e)=>{
-      if(descEl.isContentEditable) return;
+      if(descEl.classList.contains("inline-editing-host") || e.target.closest("textarea")){ e.stopPropagation(); return; }
       if(e.target.closest("a")) return; // laisser les liens s'ouvrir normalement
       e.stopPropagation();
       startInlineEdit(descEl, descEl.dataset.inlineDesc, "description", e.clientX, e.clientY);
@@ -3575,7 +3996,13 @@ function placeCaretAtPoint(x, y){
    compris), et le curseur se place là où on a tapé plutôt que de tout sélectionner. */
 function startInlineEdit(el, taskId, field, clickX, clickY){
   const row = el.closest(".item-row");
-  let original = el.textContent; // approximation immédiate (les retours à la ligne d'une description peuvent manquer)
+
+  if(field === "description"){
+    startInlineDescTextarea(el, taskId, row);
+    return;
+  }
+
+  let original = el.textContent;
 
   // Le focus doit rester synchrone, dans le même geste utilisateur, sinon le clavier ne s'affiche
   // pas sur mobile (iOS notamment coupe l'activation si un await passe avant le focus()).
@@ -3585,16 +4012,6 @@ function startInlineEdit(el, taskId, field, clickX, clickY){
   el.focus();
   placeCaretAtPoint(clickX, clickY);
 
-  if(field === "description"){
-    idbGetAll("tasks").then(tasks=>{
-      const task = tasks.find(t=>t.id===taskId);
-      if(task && document.activeElement === el){
-        original = task.description || "";
-        if(el.textContent !== original) el.textContent = original;
-      }
-    });
-  }
-
   let done = false;
   const finishEdit = async (cancel)=>{
     if(done) return;
@@ -3602,23 +4019,63 @@ function startInlineEdit(el, taskId, field, clickX, clickY){
     el.contentEditable = "false";
     el.classList.remove("inline-editing");
     if(row) row.classList.remove("editing-lock");
-    if(field === "description") state.keepDescOpenFor = taskId;
     if(cancel){ renderStack(); return; }
     const val = el.textContent.trim();
-    if(field === "name"){
-      if(val && val !== original){
-        const task = (await idbGetAll("tasks")).find(t=>t.id===taskId);
-        if(task){ task.name = val; await idbPut("tasks", task); }
-      }
-    } else {
+    if(val && val !== original){
       const task = (await idbGetAll("tasks")).find(t=>t.id===taskId);
-      if(task){ task.description = val; await idbPut("tasks", task); }
+      if(task){ task.name = val; await idbPut("tasks", task); }
     }
     renderStack();
   };
   el.addEventListener("blur", ()=>finishEdit(false), {once:true});
   el.addEventListener("keydown", (ev)=>{
-    if(field === "name" && ev.key === "Enter"){ ev.preventDefault(); el.blur(); }
+    if(ev.key === "Enter"){ ev.preventDefault(); el.blur(); }
+    if(ev.key === "Escape"){ ev.preventDefault(); finishEdit(true); }
+  });
+}
+
+/* La description utilise un vrai <textarea> (comme dans la modale complète) plutôt qu'une zone
+   contenteditable : la sélection de texte (double-tap sur un mot, glisser pour sélectionner) n'a
+   jamais bien fonctionné en contenteditable ici malgré plusieurs correctifs, alors qu'elle marche
+   nativement et sans souci dans un textarea. */
+function startInlineDescTextarea(el, taskId, row){
+  if(el.querySelector("textarea")) return;
+  const domText = el.textContent;
+  el.innerHTML = "";
+  el.classList.add("inline-editing-host");
+  if(row) row.classList.add("editing-lock");
+
+  const textarea = document.createElement("textarea");
+  textarea.className = "inline-edit-textarea";
+  textarea.value = domText;
+  textarea.rows = 3;
+  el.appendChild(textarea);
+  // Focus synchrone (même geste utilisateur) pour que le clavier s'affiche sur mobile.
+  textarea.focus();
+  textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+
+  // Récupère le texte brut réel (retours à la ligne compris) en tâche de fond.
+  idbGetAll("tasks").then(tasks=>{
+    const task = tasks.find(t=>t.id===taskId);
+    if(task && document.activeElement === textarea && textarea.value !== (task.description||"")){
+      textarea.value = task.description || "";
+    }
+  });
+
+  let done = false;
+  const finishEdit = async (cancel)=>{
+    if(done) return;
+    done = true;
+    if(row) row.classList.remove("editing-lock");
+    state.keepDescOpenFor = taskId;
+    if(cancel){ renderStack(); return; }
+    const val = textarea.value.trim();
+    const task = (await idbGetAll("tasks")).find(t=>t.id===taskId);
+    if(task){ task.description = val; await idbPut("tasks", task); }
+    renderStack();
+  };
+  textarea.addEventListener("blur", ()=>finishEdit(false), {once:true});
+  textarea.addEventListener("keydown", (ev)=>{
     if(ev.key === "Escape"){ ev.preventDefault(); finishEdit(true); }
   });
 }
@@ -3716,6 +4173,7 @@ function itemFormHtml(kind, existing, showCategory, themesList, projectsList){
     ${hasDeadline ? '' : `<option value="__none__">${tr("pasEcheanceDef")}</option>`}
     <option value="aucune">${tr("aucuneRec")}</option>
     <option value="quotidienne">${tr("tousLesJours")}</option>
+    <option value="joursOuvres">${tr("tousLesJoursOuvres")}</option>
     <option value="hebdomadaire">${tr("toutesLesSemaines")}</option>
     <option value="2semaines">${tr("toutesLes2Semaines")}</option>
     <option value="mensuelle">${tr("tousLesMois")}</option>
@@ -4143,6 +4601,7 @@ async function openThemePickerModal(){
   openModal(`
     <h3>Choisir une catégorie</h3>
     <div class="theme-picker-list">
+      <button class="theme-pick-btn" data-pick-theme="__all__" style="background:var(--accent)">${tr("toutesCategories")}</button>
       ${themes.map(t=>`<button class="theme-pick-btn" data-pick-theme="${t.id}" style="background:${t.color}">${escapeHtml(themeDisplayName(t))}</button>`).join("")}
     </div>
     <div class="modal-actions"><button class="btn-ghost" id="mCancelPick">${tr("annuler")}</button></div>
@@ -4172,16 +4631,6 @@ document.addEventListener("click", (e)=>{
   if(performance.now() - lastGestureEndTime < 80){
     e.stopPropagation();
     e.preventDefault();
-  }
-}, true);
-
-/* Sécurité : si on touche ailleurs pendant qu'un titre/description est en édition, on force
-   explicitement la sauvegarde (blur) avant que l'autre interaction ne s'exécute, plutôt que de
-   compter uniquement sur le comportement implicite du focus qui peut être moins fiable sur mobile. */
-document.addEventListener("pointerdown", (e)=>{
-  const activeEditable = document.querySelector(".inline-editing");
-  if(activeEditable && activeEditable !== e.target && !e.target.closest(".inline-editing")){
-    activeEditable.blur();
   }
 }, true);
 
@@ -4224,7 +4673,7 @@ function makeItemSwipeOnly(root, itemSelector){
     const content = item.querySelector(".swipe-content");
     if(!content) return;
     item.addEventListener("pointerdown", (e)=>{
-      if(e.target.closest("[data-checktask]") || e.target.closest(".swipe-btn") || e.target.closest("[data-inline-name]") || item.classList.contains("editing-lock") || e.target.isContentEditable) return;
+      if(e.target.closest("[data-checktask]") || e.target.closest(".swipe-btn") || e.target.closest("[data-inline-name]") || e.target.closest("textarea") || item.classList.contains("editing-lock") || e.target.isContentEditable) return;
       startSwipe(item, content, e.pointerId, e.clientX, e.clientY);
     });
   });
@@ -4629,6 +5078,7 @@ async function quickAdd(){
   applyTheme(resolveThemeName(settings.appTheme, settings.themeAutoEnabled));
   state.language = settings.language || "fr";
   renderStack();
+  if(!settings.hasSeenOnboarding) showOnboarding();
   await checkWeekRollover();
   await checkAutoSkipHabits();
   checkForNewVersion();
