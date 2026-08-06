@@ -795,7 +795,7 @@ const DB_VERSION = 1;
 /* Version de l'app, indépendante de la structure interne des données (DATA_SCHEMA_VERSION).
    Change-la à chaque mise à jour publiée, en même temps que CACHE_NAME dans service-worker.js
    et version.json (utilisés pour l'export et la détection de nouvelle version). */
-const APP_VERSION = "2.5.0";
+const APP_VERSION = "2.5.2";
 const DATA_SCHEMA_VERSION = 1;
 let db;
 
@@ -978,6 +978,12 @@ const STRINGS = {
     projetsTermines: "Projets terminés", tachesEtoileesTerminees: "Tâches étoilées terminées",
     retour: "Retour", suivant: "Suivant",
     afficherRapportSemaine: "Afficher le rapport de la semaine passée",
+    versionActuelle: "Version actuelle :", verifierMisesAJour: "Vérifier les mises à jour",
+    appAJourTitre: "Beeziday est à jour", appAJourMsg: "Tu utilises déjà la dernière version disponible.",
+    nouvelleVersionTitre: "Nouvelle version disponible",
+    nouvelleVersionMsg: (v)=>`La version ${v} est disponible (tu utilises la ${APP_VERSION}).`,
+    mettreAJourMaintenant: "Mettre à jour maintenant",
+    verificationImpossible: "Impossible de vérifier pour le moment (pas de connexion ?).",
     semaineArgent: "Semaine en argent !", msgArgent: "Belle régularité cette semaine, continue comme ça 🥈",
     semaineBronze: "Semaine en bronze", msgBronze: "Chaque petit pas compte, la semaine prochaine ira encore mieux 🥉",
     nouvelleSemaine: "Nouvelle semaine !", msgNeutre: "La semaine passée a été plus calme, ce n'est pas grave : on repart à zéro.",
@@ -1091,6 +1097,12 @@ const STRINGS = {
     projetsTermines: "Projects completed", tachesEtoileesTerminees: "Starred tasks completed",
     retour: "Back", suivant: "Next",
     afficherRapportSemaine: "Show last week's report",
+    versionActuelle: "Current version:", verifierMisesAJour: "Check for updates",
+    appAJourTitre: "Beeziday is up to date", appAJourMsg: "You're already using the latest version.",
+    nouvelleVersionTitre: "New version available",
+    nouvelleVersionMsg: (v)=>`Version ${v} is available (you're using ${APP_VERSION}).`,
+    mettreAJourMaintenant: "Update now",
+    verificationImpossible: "Couldn't check right now (no connection?).",
     semaineArgent: "Silver week!", msgArgent: "Great consistency this week, keep it up 🥈",
     semaineBronze: "Bronze week", msgBronze: "Every small step counts, next week will be even better 🥉",
     nouvelleSemaine: "New week!", msgNeutre: "Last week was quieter, that's alright — starting fresh.",
@@ -3235,6 +3247,52 @@ async function checkForNewVersion(){
   }
 }
 
+/* Vérification manuelle déclenchée depuis les Réglages : contrairement à checkForNewVersion,
+   celle-ci affiche toujours un résultat clair (à jour, ou nouvelle version + bouton pour l'appliquer),
+   plutôt que de rester silencieuse quand tout va bien ou en cas d'erreur. */
+async function checkForUpdateManual(){
+  try{
+    if("serviceWorker" in navigator){
+      const reg = await navigator.serviceWorker.getRegistration();
+      if(reg) await reg.update();
+    }
+    const res = await fetch("version.json", {cache:"no-store"});
+    if(!res.ok) throw new Error("version.json indisponible");
+    const data = await res.json();
+    if(data.version && data.version !== APP_VERSION){
+      openModal(`
+        <h3>${tr("nouvelleVersionTitre")}</h3>
+        <p style="font-size:14px; line-height:1.5; margin-bottom:18px;">${tr("nouvelleVersionMsg", data.version)}</p>
+        <div class="modal-actions" style="justify-content:center; flex-direction:column; gap:8px;">
+          <button class="btn-primary" id="updateNowBtn" style="width:100%;">${tr("mettreAJourMaintenant")}</button>
+          <button class="btn-ghost" id="updateLaterBtn" style="width:100%;">${tr("fermer")}</button>
+        </div>
+      `);
+      document.getElementById("updateLaterBtn").addEventListener("click", closeModal);
+      document.getElementById("updateNowBtn").addEventListener("click", ()=>{
+        window.location.reload();
+      });
+    } else {
+      openModal(`
+        <h3>${tr("appAJourTitre")}</h3>
+        <p style="font-size:14px; line-height:1.5; margin-bottom:18px;">${tr("appAJourMsg")}</p>
+        <div class="modal-actions" style="justify-content:center;">
+          <button class="btn-primary" id="upToDateClose">${tr("fermer")}</button>
+        </div>
+      `);
+      document.getElementById("upToDateClose").addEventListener("click", closeModal);
+    }
+  }catch(err){
+    openModal(`
+      <h3>${tr("verificationImpossible")}</h3>
+      <div class="modal-actions" style="justify-content:center;">
+        <button class="btn-primary" id="checkErrClose">${tr("fermer")}</button>
+      </div>
+    `);
+    document.getElementById("checkErrClose").addEventListener("click", closeModal);
+  }
+}
+
 /* =========================================================================
    RENDER — Réglages
    ========================================================================= */
@@ -3453,6 +3511,11 @@ async function renderReglages(){
     <button class="btn-choose" id="exportDataBtn" style="display:block;width:100%;margin-bottom:10px;">${tr("exporterMesDonnees")}</button>
     <button class="btn-ghost" id="importDataBtn" style="display:block;width:100%;">${tr("importerMesDonnees")}</button>
     <input type="file" id="importFileInput" accept="application/json" style="display:none;">
+  </div>
+
+  <div class="settings-group" style="text-align:center;">
+    <p style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">${tr("versionActuelle")} ${APP_VERSION}</p>
+    <button class="btn-ghost" id="checkUpdateBtn" style="display:block;width:100%;">${tr("verifierMisesAJour")}</button>
   </div>`;
 }
 
@@ -3831,6 +3894,8 @@ function attachScreenEvents(screenName, root){
       const prevWeekDates = getWeekDates(-1, s.weekStart ?? 1).map(toISODate);
       showWeekRecapFullscreen(prevWeekDates);
     });
+    const checkUpdateBtn = root.querySelector("#checkUpdateBtn");
+    if(checkUpdateBtn) checkUpdateBtn.addEventListener("click", checkForUpdateManual);
     root.querySelector("#exportDataBtn").addEventListener("click", ()=>{
       openModal(`
         <h3>${tr("exportTitle")}</h3>
@@ -5086,9 +5151,21 @@ async function quickAdd(){
 
 if("serviceWorker" in navigator){
   window.addEventListener("load", ()=>{
-    navigator.serviceWorker.register("service-worker.js").catch(err=>{
+    navigator.serviceWorker.register("service-worker.js").then(()=>{
+      checkForNewVersion();
+    }).catch(err=>{
       console.warn("Service worker non enregistré :", err);
     });
+  });
+  // Notre service worker appelle déjà skipWaiting()+clients.claim(), donc une nouvelle version
+  // finit par prendre le contrôle de l'onglet déjà ouvert — mais sans ce recharger, le
+  // JavaScript ancien continuait de tourner en mémoire malgré tout, donnant l'impression que
+  // rien ne se passait même après avoir fermé et rouvert l'app.
+  let hasReloadedForNewSW = false;
+  navigator.serviceWorker.addEventListener("controllerchange", ()=>{
+    if(hasReloadedForNewSW) return;
+    hasReloadedForNewSW = true;
+    window.location.reload();
   });
 }
 
