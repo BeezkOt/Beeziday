@@ -112,6 +112,19 @@
     margin: 22px 0 12px;
   }
   .row-title h2{font-size:15px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color: var(--text-muted);}
+
+  .create-btn-row{display:flex; gap:8px; margin:16px 0;}
+  .create-btn{
+    flex:1; display:flex; align-items:center; justify-content:center; gap:6px;
+    background: var(--accent-soft); color: var(--accent); border:none; border-radius:999px;
+    padding:10px 12px; font-size:13px; font-weight:700; cursor:pointer;
+  }
+  .create-btn svg{width:15px; height:15px; flex-shrink:0;}
+
+  .sticky-cat-header{
+    position: sticky; top:0; z-index:8; background: var(--bg);
+    margin: -20px -18px 0; padding: 20px 18px 0;
+  }
   .icon-btn{
     width:30px; height:30px; border-radius:50%;
     display:flex; align-items:center; justify-content:center;
@@ -222,10 +235,11 @@
 
   .alert-banner{
     display:flex; align-items:center; gap:8px;
-    background: var(--alert-soft); color:#7A3626;
+    background: rgba(230,142,10,.16); color:#8C5300;
     border-radius: var(--radius-sm); padding:10px 12px; font-size:12.5px; font-weight:600;
     margin-bottom:10px;
   }
+  .alert-banner.alert-banner-overdue{ background: var(--alert-soft); color:#7A3626; }
   .alert-banner svg{width:16px;height:16px; flex-shrink:0;}
   .alert-banner .alert-text{flex:1;}
   .alert-banner .alert-text strong{font-weight:700;}
@@ -238,9 +252,10 @@
   .alert-banner-wrap{margin-bottom:6px;}
   .alert-summary{
     display:flex; align-items:center; gap:8px; justify-content:space-between; cursor:pointer;
-    background:var(--alert-soft); color:#7A3626; border-radius:var(--radius-sm);
+    background: rgba(230,126,34,.16); color:#9C5210; border-radius:var(--radius-sm);
     padding:10px 12px; font-size:12.5px; font-weight:700; margin-bottom:6px;
   }
+  .alert-summary.alert-summary-overdue{ background:var(--alert-soft); color:#7A3626; }
   .alert-summary svg{width:17px;height:17px; flex-shrink:0;}
   .alert-summary-chev{width:14px; height:14px; flex-shrink:0; transition: transform .2s ease;}
   .alert-summary-chev svg{width:14px; height:14px; display:block;}
@@ -327,7 +342,8 @@
   .folder-icon{width:18px; height:18px; flex-shrink:0;}
   .folder-icon svg{width:18px; height:18px; display:block;}
   .item-row .meta{display:flex; align-items:center; gap:10px; margin-top:8px; font-size:12px; color:var(--text-muted);}
-  .item-row .meta .deadline.soon{color:var(--alert); font-weight:700;}
+  .item-row .meta .deadline.soon{color:#E08E0A; font-weight:700;}
+  .item-row .meta .deadline.overdue{color:var(--alert); font-weight:700;}
   .task-row-main{display:flex; align-items:center; gap:12px;}
   .task-name-col{flex:1; min-width:0;}
   .task-meta-row{display:flex; align-items:center; gap:6px; margin-top:3px;}
@@ -454,7 +470,8 @@
   .row-edit-btn svg{width:15px;height:15px;}
   .row-edit-btn.light{color:rgba(255,255,255,.9);}
   .task-deadline{font-size:12px; color:var(--text-muted); white-space:nowrap;}
-  .task-deadline.soon{color:var(--alert); font-weight:700;}
+  .task-deadline.soon{color:#E08E0A; font-weight:700;}
+  .task-deadline.overdue{color:var(--alert); font-weight:700;}
 
   /* ---------- Terminé section ---------- */
   .done-header{
@@ -795,7 +812,7 @@ const DB_VERSION = 1;
 /* Version de l'app, indépendante de la structure interne des données (DATA_SCHEMA_VERSION).
    Change-la à chaque mise à jour publiée, en même temps que CACHE_NAME dans service-worker.js
    et version.json (utilisés pour l'export et la détection de nouvelle version). */
-const APP_VERSION = "2.5.2";
+const APP_VERSION = "2.6.1";
 const DATA_SCHEMA_VERSION = 1;
 let db;
 
@@ -999,7 +1016,8 @@ const STRINGS = {
     descriptionLabel: "Description (optionnelle)",
     descriptionPlaceholder: "Notes, détails, liens...",
     rienIci: "Rien ici pour l'instant.", aucuneSousTache: "Aucune sous-tâche pour l'instant.",
-    tachesRepeteesAvenir: (n)=>`Tâches récurrentes à venir (${n})`,
+    erreurEcran: "Oups", erreurEcranMsg: "Un problème est survenu pendant l'affichage. Essaie de changer d'onglet et de revenir, ou de relancer l'app.",
+    tachesRepeteesAvenir: (n)=>`Tâches à venir (${n})`,
     separerRecurrentes: "Séparer les tâches récurrentes à venir",
     confirmerSuppressionRecurrente: "Cette tâche se répète. Que veux-tu supprimer ?",
     supprimerCetteOccurrence: "Uniquement cette occurrence",
@@ -1010,6 +1028,10 @@ const STRINGS = {
     classementEcheance: "Par échéance", classementPriorite: "Par priorité", classementEtoile: "Étoilées d'abord",
     tacheLieeLabel: "Tâche liée à la tâche précédente",
     tacheLieeDesc: "Si activé, cette tâche ne pourra être validée qu'après avoir terminé la tâche située juste au-dessus.",
+    programmerLabel: "Programmer",
+    programmerDesc: "Si activé, cette tâche n'apparaîtra sur le Dashboard qu'à partir de la date d'échéance (avant, elle reste visible dans la liste, dans la section Tâches à venir).",
+    creerUneTacheBtn: "Créer une tâche", creerUnProjetBtn: "Créer un projet",
+    ajouterUneTache: "Ajouter une tâche",
     tacheVerrouilleeAlerte: (nom)=>`Pour passer à cette tâche, une autre tâche doit d'abord être complétée : ${nom}`,
     passerTacheMere: "Passer sur cette tâche",
     aucuneTacheFiltres: "Aucune tâche ne correspond aux filtres actifs.",
@@ -1053,6 +1075,7 @@ const STRINGS = {
     et: "Et", ou: "Ou", toutes: "Toutes", aucune: "Aucune", uniquement: "Uniquement", jusquA: "Jusqu'à",
     classementAuto: "Automatique (par défaut)",
     alertSummary: (n)=>`${n} tâche${n>1?'s':''} à échéance courte`,
+    overdueSummary: (n)=>`${n} tâche${n>1?'s':''} à échéance dépassée`,
     prioriserEcheances: "Afficher en priorité les tâches à échéance",
     echeancePassee: "Passée", echeanceAujourdhui: "Aujourd'hui", echeanceApres: "Après aujourd'hui",
     plageEnCours: "Plage en cours",
@@ -1118,7 +1141,8 @@ const STRINGS = {
     descriptionLabel: "Description (optional)",
     descriptionPlaceholder: "Notes, details, links...",
     rienIci: "Nothing here yet.", aucuneSousTache: "No subtasks yet.",
-    tachesRepeteesAvenir: (n)=>`Upcoming recurring tasks (${n})`,
+    erreurEcran: "Oops", erreurEcranMsg: "Something went wrong while displaying this. Try switching tabs and back, or restarting the app.",
+    tachesRepeteesAvenir: (n)=>`Upcoming tasks (${n})`,
     separerRecurrentes: "Separate upcoming recurring tasks",
     confirmerSuppressionRecurrente: "This task repeats. What would you like to delete?",
     supprimerCetteOccurrence: "Just this occurrence",
@@ -1129,6 +1153,10 @@ const STRINGS = {
     classementEcheance: "By due date", classementPriorite: "By priority", classementEtoile: "Starred first",
     tacheLieeLabel: "Linked to the previous task",
     tacheLieeDesc: "If enabled, this task can only be checked off once the task right above it is done.",
+    programmerLabel: "Schedule",
+    programmerDesc: "If enabled, this task will only appear on the Dashboard once its due date arrives (until then, it stays visible in the list, under Upcoming tasks).",
+    creerUneTacheBtn: "Create a task", creerUnProjetBtn: "Create a project",
+    ajouterUneTache: "Add a task",
     tacheVerrouilleeAlerte: (nom)=>`To switch to this task, another task needs to be completed first: ${nom}`,
     passerTacheMere: "Switch to this task",
     aucuneTacheFiltres: "No task matches the active filters.",
@@ -1172,6 +1200,7 @@ const STRINGS = {
     et: "And", ou: "Or", toutes: "All", aucune: "None", uniquement: "Only", jusquA: "Until",
     classementAuto: "Automatic (default)",
     alertSummary: (n)=>`${n} task${n>1?'s':''} with a short deadline`,
+    overdueSummary: (n)=>`${n} task${n>1?'s':''} with a past deadline`,
     prioriserEcheances: "Show tasks with a due date first",
     echeancePassee: "Past", echeanceAujourdhui: "Today", echeanceApres: "After today",
     plageEnCours: "Current time block",
@@ -1217,6 +1246,8 @@ function applyCategoryColorToScreen(root, color){
   if(editBtn){ editBtn.style.color = color; editBtn.style.background = color + "26"; }
   const addBtn = root.querySelector("#addProjectBtn");
   if(addBtn){ addBtn.style.color = color; addBtn.style.background = color + "26"; }
+  const createTaskBtn = root.querySelector("#createTaskBtn");
+  if(createTaskBtn){ createTaskBtn.style.color = color; createTaskBtn.style.background = color + "26"; }
   root.querySelectorAll(".check-circle").forEach(c=>{
     c.style.borderColor = color;
     if(c.classList.contains("done")) c.style.background = color;
@@ -1279,6 +1310,16 @@ function daysUntil(dateStr){
   const now = new Date(); now.setHours(0,0,0,0);
   const d = new Date(dateStr); d.setHours(0,0,0,0);
   return Math.round((d - now) / 86400000);
+}
+/* "soon" (orange) pour une échéance proche mais pas encore passée, "overdue" (rouge) une fois
+   dépassée — auparavant les deux étaient confondus dans la même couleur rouge, ce qui prêtait
+   à confusion. */
+function deadlineClass(dateStr){
+  const n = daysUntil(dateStr);
+  if(n === null) return "";
+  if(n < 0) return "overdue";
+  if(n <= 14) return "soon";
+  return "";
 }
 function formatDeadline(dateStr){
   if(!dateStr) return "";
@@ -1511,12 +1552,14 @@ async function getLockedStandaloneTaskIds(tasks){
   return lockedIds;
 }
 
-/* Une occurrence récurrente déjà créée mais dont l'échéance est dans le futur ne doit jamais
-   être proposée sur le Dashboard avant cette date — elle reste visible seulement dans la liste
-   normale (ou la section "à venir" si séparée). */
+/* Une occurrence récurrente déjà créée, ou une tâche programmée manuellement, dont l'échéance
+   est dans le futur ne doit jamais être proposée sur le Dashboard avant cette date — elle reste
+   visible seulement dans la liste normale (ou la section "à venir" si séparée). */
 function isFutureRecurringInstance(t){
-  if(!t.recurrence || t.recurrence === "aucune" || !t.deadline) return false;
-  return t.deadline > toISODate(new Date());
+  if(!t.deadline || t.deadline <= toISODate(new Date())) return false;
+  if(t.recurrence && t.recurrence !== "aucune") return true;
+  if(t.scheduled) return true;
+  return false;
 }
 
 async function buildCandidates(themeId, excludeId, applyFilters){
@@ -1586,11 +1629,25 @@ async function getUpcomingDeadlineAlerts(themeId, excludeId){
     ...standaloneTasks
   ];
   return all
-    .filter(i=> i.id !== excludeId && i.deadline && daysUntil(i.deadline) <= 14 && daysUntil(i.deadline) >= 0)
+    .filter(i=> i.id !== excludeId && i.deadline && daysUntil(i.deadline) <= 14 && daysUntil(i.deadline) >= 0 && !isFutureRecurringInstance(i))
     .map(i=>{
       const info = lockInfo.get(i.id);
       return (info && info.locked) ? {...i, _lockedParentId: info.parentId} : i;
     });
+}
+
+/* Échéances dépassées, en excluant ce qui est déjà affiché comme tâche en cours / prochaine
+   tâche sur le Dashboard (pas besoin de le signaler deux fois). */
+async function getOverdueTasks(themeId, excludeIds){
+  const {projects, tasks} = await getAllActive();
+  const themeProjects = projects.filter(p => themeId===null || p.themeId === themeId);
+  const statuses = await Promise.all(themeProjects.map(getProjectDashboardStatus));
+  const standaloneTasks = tasks.filter(t=>!t.projectId && (themeId===null || t.themeId === themeId) && t.status !== "done");
+  const all = [
+    ...themeProjects.filter((p,i)=>!statuses[i].empty && !statuses[i].done),
+    ...standaloneTasks
+  ];
+  return all.filter(i=> !excludeIds.includes(i.id) && i.deadline && daysUntil(i.deadline) < 0);
 }
 
 async function getSubtasks(projectId){
@@ -1666,13 +1723,21 @@ async function renderStack(direction){
     top.screen);
 
   let html = "";
-  if(top.screen === "dashboard") html = await renderDashboard();
-  else if(top.screen === "cats") html = await renderCategories();
-  else if(top.screen === "catDetail") html = await renderCategoryDetail(top.themeId);
-  else if(top.screen === "projectDetail") html = await renderProjectDetail(top.projectId);
-  else if(top.screen === "plages") html = await renderPlages();
-  else if(top.screen === "habitudes") html = await renderHabitudes();
-  else if(top.screen === "reglages") html = await renderReglages();
+  try{
+    if(top.screen === "dashboard") html = await renderDashboard();
+    else if(top.screen === "cats") html = await renderCategories();
+    else if(top.screen === "catDetail") html = await renderCategoryDetail(top.themeId);
+    else if(top.screen === "projectDetail") html = await renderProjectDetail(top.projectId);
+    else if(top.screen === "plages") html = await renderPlages();
+    else if(top.screen === "habitudes") html = await renderHabitudes();
+    else if(top.screen === "reglages") html = await renderReglages();
+  }catch(err){
+    // Sans ce filet, une erreur inattendue pendant le rendu laissait l'ancien écran affiché
+    // (l'onglet actif changeait dans la barre du bas, mais le contenu restait bloqué sur
+    // l'écran précédent) — on affiche au moins un message plutôt que de rester figé.
+    console.error("Erreur de rendu pour l'écran", top.screen, err);
+    html = renderPlaceholder(tr("erreurEcran"), tr("erreurEcranMsg"));
+  }
 
   const oldScreen = app.querySelector(".screen");
   const newScreen = document.createElement("div");
@@ -1680,6 +1745,7 @@ async function renderStack(direction){
   newScreen.innerHTML = html;
 
   if(direction === "push" && oldScreen){
+    app.scrollTop = 0;
     newScreen.style.transform = "translateX(100%)";
     app.appendChild(newScreen);
     void newScreen.offsetHeight; // force reflow
@@ -1689,6 +1755,7 @@ async function renderStack(direction){
     });
     newScreen.addEventListener("transitionend", ()=> oldScreen.remove(), {once:true});
   } else if(direction === "pop" && oldScreen){
+    app.scrollTop = 0;
     newScreen.style.transform = "translateX(-25%)";
     app.insertBefore(newScreen, app.firstChild);
     void newScreen.offsetHeight;
@@ -1703,7 +1770,11 @@ async function renderStack(direction){
     app.appendChild(newScreen);
   }
 
-  attachScreenEvents(top.screen, newScreen);
+  try{
+    attachScreenEvents(top.screen, newScreen);
+  }catch(err){
+    console.error("Erreur en câblant les événements de l'écran", top.screen, err);
+  }
 
   document.getElementById("quickAddWrap").style.display =
     PROJETS_SCREENS.includes(top.screen) ? "flex" : "none";
@@ -1778,8 +1849,9 @@ async function renderDashboard(){
 
       // Alerte échéances proches, uniquement dans la même catégorie que celle affichée
       const alerts = await getUpcomingDeadlineAlerts(pickThemeId, item ? item.id : null);
+      let alertsHtml = "";
       if(alerts.length){
-        bodyHtml += `
+        alertsHtml = `
         <div class="alert-summary" id="alertSummaryToggle">
           ${ICONS.alert}
           <span style="flex:1;">${tr("alertSummary", alerts.length)}</span>
@@ -1794,6 +1866,23 @@ async function renderDashboard(){
       }
 
       if(!item){
+        const overdueNoItem = await getOverdueTasks(pickThemeId, []);
+        let overdueHtmlNoItem = "";
+        if(overdueNoItem.length){
+          overdueHtmlNoItem = `
+          <div class="alert-summary alert-summary-overdue" id="overdueSummaryToggle">
+            ${ICONS.alert}
+            <span style="flex:1;">${tr("overdueSummary", overdueNoItem.length)}</span>
+            <span class="alert-summary-chev">${ICONS.chevRight}</span>
+          </div>
+          <div class="alert-banner-wrap" id="overdueBannerWrap" style="display:none;">` + overdueNoItem.map(a=>`
+            <div class="alert-banner alert-banner-overdue">
+              <span class="alert-text"><strong>${escapeHtml(a.name)}</strong> — ${tr("echeance")} ${formatDeadline(a.deadline)}</span>
+              <button class="alert-switch" data-switch-theme="${a.themeId}" data-switch-item="${a.id}" aria-label="Basculer sur ce projet">${ICONS.chevRight}</button>
+            </div>
+          `).join("") + `</div>`;
+        }
+        bodyHtml += overdueHtmlNoItem + alertsHtml;
         const filtersActiveNow = !!(state.dashboardFilters && (state.dashboardFilters.deadline.enabled || state.dashboardFilters.priority.enabled || state.dashboardFilters.starred.enabled || state.dashboardFilters.deadlinePriority.enabled));
         let noMatchDueToFilters = false;
         if(filtersActiveNow){
@@ -1813,6 +1902,26 @@ async function renderDashboard(){
         }
       } else {
         const {current, next, progress, total, done} = await getCurrentAndNextTask(item, pickThemeId);
+
+        const excludeIds = [item.id, current ? current.id : null, next ? next.id : null].filter(Boolean);
+        const overdue = await getOverdueTasks(pickThemeId, excludeIds);
+        let overdueHtml = "";
+        if(overdue.length){
+          overdueHtml = `
+          <div class="alert-summary alert-summary-overdue" id="overdueSummaryToggle">
+            ${ICONS.alert}
+            <span style="flex:1;">${tr("overdueSummary", overdue.length)}</span>
+            <span class="alert-summary-chev">${ICONS.chevRight}</span>
+          </div>
+          <div class="alert-banner-wrap" id="overdueBannerWrap" style="display:none;">` + overdue.map(a=>`
+            <div class="alert-banner alert-banner-overdue">
+              <span class="alert-text"><strong>${escapeHtml(a.name)}</strong> — ${tr("echeance")} ${formatDeadline(a.deadline)}</span>
+              <button class="alert-switch" data-switch-theme="${a.themeId}" data-switch-item="${a.id}" aria-label="Basculer sur ce projet">${ICONS.chevRight}</button>
+            </div>
+          `).join("") + `</div>`;
+        }
+        // Échéances dépassées d'abord, puis échéance courte
+        bodyHtml += overdueHtml + alertsHtml;
 
         if(item.kind === "project"){
           const pct = Math.round(progress*100);
@@ -1908,7 +2017,7 @@ function renderTaskCard(task, isNext){
     <div class="task-name-col">
       <div class="task-name">${isProject ? `<span class="folder-icon" style="display:inline-flex; vertical-align:-3px; margin-right:5px;">${ICONS.folder}</span>` : ""}${escapeHtml(task.name)}</div>
       ${task.deadline ? `<div class="task-meta-row">
-        <span class="task-deadline ${daysUntil(task.deadline)<=14?'soon':''}">${formatDeadline(task.deadline)}</span>
+        <span class="task-deadline ${deadlineClass(task.deadline)}">${formatDeadline(task.deadline)}</span>
         ${task.recurrence && task.recurrence !== "aucune" ? `<span class="repeat-icon">${ICONS.repeat}</span>` : ""}
       </div>` : ""}
       ${task.description ? `<div class="task-desc-dashboard" id="taskDescDash-${task.id}">${linkify(task.description)}</div>` : ""}
@@ -1978,9 +2087,11 @@ async function toggleProjectDone(projectId){
   const project = (await idbGetAll("projects")).find(p=>p.id===projectId);
   if(!project) return;
   if(project.status === "done"){
+    const previousCompletedAt = project.completedAt;
     project.status = "active";
     project.completedAt = null;
     await idbPut("projects", project);
+    await removeCompletionLogEntry(projectId, previousCompletedAt);
     renderStack();
     return;
   }
@@ -1990,6 +2101,7 @@ async function toggleProjectDone(projectId){
     project.status = "done";
     project.completedAt = toISODate(new Date());
     await idbPut("projects", project);
+    await appendCompletionLog({id: projectId, date: project.completedAt, kind:"project", themeId: project.themeId});
     renderStack();
   } else {
     openModal(`
@@ -2005,9 +2117,30 @@ async function toggleProjectDone(projectId){
       project.status = "done";
       project.completedAt = toISODate(new Date());
       await idbPut("projects", project);
+      await appendCompletionLog({id: projectId, date: project.completedAt, kind:"project", themeId: project.themeId});
       closeModal();
       renderStack();
     });
+  }
+}
+
+/* Journal persistant des tâches/projets validés, utilisé pour le rapport hebdomadaire — pour
+   qu'il reste exact même si on vide la section "Terminé" (qui, elle, supprime réellement les
+   tâches) avant que le rapport de la semaine ne s'affiche. */
+async function appendCompletionLog(entry){
+  const settings = Object.fromEntries((await idbGetAll("settings")).map(s=>[s.key,s.value]));
+  const log = settings.completionLog || [];
+  log.push(entry);
+  await idbPut("settings", {key:"completionLog", value: log});
+}
+async function removeCompletionLogEntry(id, date){
+  if(!date) return;
+  const settings = Object.fromEntries((await idbGetAll("settings")).map(s=>[s.key,s.value]));
+  const log = settings.completionLog || [];
+  const idx = log.findIndex(e=>e.id===id && e.date===date);
+  if(idx !== -1){
+    log.splice(idx, 1);
+    await idbPut("settings", {key:"completionLog", value: log});
   }
 }
 
@@ -2021,15 +2154,18 @@ async function toggleTaskDone(taskId){
       await idbDelete("tasks", task.nextOccurrenceId);
       task.nextOccurrenceId = null;
     }
+    const previousCompletedAt = task.completedAt;
     task.status = "todo";
     task.completedAt = null;
     await idbPut("tasks", task);
+    await removeCompletionLogEntry(taskId, previousCompletedAt);
     return;
   }
 
   task.status = "done";
   task.completedAt = toISODate(new Date());
   await idbPut("tasks", task);
+  await appendCompletionLog({id: taskId, date: task.completedAt, kind:"task", themeId: task.themeId, starred: !!task.starred});
   if(task.recurrence && task.recurrence !== "aucune" && task.deadline){
     const targetDay = task.recurrenceDay || parseISODate(task.deadline).getDate();
     const settings = Object.fromEntries((await idbGetAll("settings")).map(s=>[s.key,s.value]));
@@ -2254,7 +2390,7 @@ async function renderCategoryDetail(themeId){
     ...tasks.filter(t=>!t.projectId && t.themeId===themeId).map(t=>({...t, kind:"task"}))
   ];
   const separateUpcoming = theme ? theme.separateUpcoming !== false : true;
-  const isUpcomingRecurring = i => separateUpcoming && i.kind==="task" && i.status!=="done" && i.recurrence && i.recurrence!=="aucune" && i.deadline && i.deadline > todayISO;
+  const isUpcomingRecurring = i => separateUpcoming && i.kind==="task" && i.status!=="done" && isFutureRecurringInstance(i);
 
   // Verrouillage des tâches liées : calculé sur l'ordre manuel de TOUTES les tâches seules
   // (faites incluses, pour connaître le statut du prédécesseur), catégorie par catégorie.
@@ -2268,14 +2404,16 @@ async function renderCategoryDetail(themeId){
   const upcomingItems = rawItems.filter(isUpcomingRecurring).sort((a,b)=>(a.deadline||'').localeCompare(b.deadline||''));
 
   return `
-  <div class="screen-header">
-    <button class="back-btn" id="backBtn">${ICONS.back}</button>
-    <h1 class="screen-title" style="flex:1">${escapeHtml(theme ? themeDisplayName(theme) : "")}</h1>
-    ${theme ? `<button class="icon-btn" id="editCatBtn">${ICONS.pencil}</button>` : ""}
-  </div>
-  <div class="row-title">
-    <h2 style="display:flex; align-items:center; gap:8px;"><span class="folder-icon">${ICONS.folder}</span>${tr("projets")}</h2>
-    <button class="icon-btn" id="addProjectBtn">${ICONS.plus}</button>
+  <div class="sticky-cat-header">
+    <div class="screen-header">
+      <button class="back-btn" id="backBtn">${ICONS.back}</button>
+      <h1 class="screen-title" style="flex:1">${escapeHtml(theme ? themeDisplayName(theme) : "")}</h1>
+      ${theme ? `<button class="icon-btn" id="editCatBtn">${ICONS.pencil}</button>` : ""}
+    </div>
+    <div class="create-btn-row" id="createBtnRow">
+      <button class="create-btn" id="createTaskBtn">${ICONS.plus}<span>${tr("creerUneTacheBtn")}</span></button>
+      <button class="create-btn" id="addProjectBtn">${ICONS.plus}<span>${tr("creerUnProjetBtn")}</span></button>
+    </div>
   </div>
   <div id="itemList">
     ${activeItems.map(i=>renderItemRow(i, theme?theme.color:null)).join("") || `<div class="placeholder-msg">${tr("rienIci")}</div>`}
@@ -2307,7 +2445,7 @@ function renderItemRow(item, themeColor){
           </div>
         </div>
         <div class="meta">
-          ${item.deadline ? `<span class="deadline ${daysUntil(item.deadline)<=14 ? 'soon':''}">${formatDeadline(item.deadline)}</span>` : ""}
+          ${item.deadline ? `<span class="deadline ${deadlineClass(item.deadline)}">${formatDeadline(item.deadline)}</span>` : ""}
           <span class="subcount" data-subcount="${item.id}" data-subcount-color="${themeColor||''}">…</span>
         </div>
       </div>
@@ -2326,7 +2464,7 @@ function renderItemRow(item, themeColor){
         <div class="task-name-col">
           <div class="task-name" data-inline-name="${item.id}">${item._locked ? `<span class="linked-arrow">${ICONS.cornerDownRight}</span>` : ""}${escapeHtml(item.name)}</div>
           ${item.deadline ? `<div class="task-meta-row">
-            <span class="task-deadline ${daysUntil(item.deadline)<=14?'soon':''}">${formatDeadline(item.deadline)}</span>
+            <span class="task-deadline ${deadlineClass(item.deadline)}">${formatDeadline(item.deadline)}</span>
             ${item.recurrence && item.recurrence !== "aucune" ? `<span class="repeat-icon">${ICONS.repeat}</span>` : ""}
           </div>` : ""}
         </div>
@@ -2386,7 +2524,7 @@ async function renderProjectDetail(projectId){
   const separateUpcoming = theme ? theme.separateUpcoming !== false : true;
   const subtasks = await getSubtasks(projectId);
   const todayISO = toISODate(new Date());
-  const isUpcomingRecurring = t => separateUpcoming && t.status!=="done" && t.recurrence && t.recurrence!=="aucune" && t.deadline && t.deadline > todayISO;
+  const isUpcomingRecurring = t => separateUpcoming && t.status!=="done" && isFutureRecurringInstance(t);
   const lockMap = computeLockStates(subtasks);
   subtasks.forEach(t=>{ t._locked = lockMap.get(t.id) || false; });
   const activeSubs = subtasks.filter(t=>t.status !== "done" && !isUpcomingRecurring(t)).map(t=>({...t, kind:"task"}));
@@ -2970,8 +3108,7 @@ function habitFormHtml(existing, weekDatesISOs){
     ${weekDatesISOs.map(iso=>{
       const val = existing.completions && existing.completions[iso];
       const d = parseISODate(iso);
-      const original = val === "skip" ? "skip" : "";
-      return `<button type="button" class="day-circle ${val ? (val==='skip'?'skipped':'done') : ''}" data-toggle-day="${iso}" data-original="${original}">${DAY_LETTER[d.getDay()]}</button>`;
+      return `<button type="button" class="day-circle ${val ? (val==='skip'?'skipped':'done') : ''}" data-toggle-day="${iso}">${DAY_LETTER[d.getDay()]}</button>`;
     }).join("")}
   </div>
   ` : ``}
@@ -3029,19 +3166,19 @@ async function openHabitModal(existing){
         const habit = (await idbGetAll("habits")).find(h=>h.id===existing.id);
         if(!habit) return;
         habit.completions = habit.completions || {};
-        // Dévalider une case ramène à son état d'origine (skip si elle était skip, sinon vide),
-        // plutôt que de toujours retomber sur "vide" — pour pouvoir faire l'aller-retour skip ↔ validé.
-        if(habit.completions[iso] === true){
-          if(btn.dataset.original === "skip") habit.completions[iso] = "skip";
-          else delete habit.completions[iso];
-        } else {
-          habit.completions[iso] = true;
-        }
+        // "skip-done" mémorise durablement qu'un jour skip a été validé manuellement : dévalider
+        // y ramène ensuite (même après avoir fermé et rouvert cette modale plusieurs fois),
+        // contrairement à une simple case vide qui, elle, oublierait cette origine.
+        const cur = habit.completions[iso];
+        if(cur === "skip") habit.completions[iso] = "skip-done";
+        else if(cur === "skip-done") habit.completions[iso] = "skip";
+        else if(cur === true) delete habit.completions[iso];
+        else habit.completions[iso] = true;
         await idbPut("habits", habit);
         existing.completions = habit.completions;
         const now = habit.completions[iso];
         btn.classList.remove("done","skipped");
-        if(now === true) btn.classList.add("done");
+        if(now === true || now === "skip-done") btn.classList.add("done");
         else if(now === "skip") btn.classList.add("skipped");
       });
     });
@@ -3098,13 +3235,16 @@ async function showWeekRecapFullscreen(prevWeekDates){
   const score = await computeWeekScoreForDates(prevWeekDates);
   const {tier, title, msg} = weekRecapMessage(score);
 
-  const [tasks, projects, themes] = await Promise.all([idbGetAll("tasks"), idbGetAll("projects"), idbGetAll("themes")]);
-  const doneTasks = tasks.filter(t=>t.completedAt && prevWeekDates.includes(t.completedAt));
-  const doneProjects = projects.filter(p=>p.completedAt && prevWeekDates.includes(p.completedAt));
-  const starredDone = doneTasks.filter(t=>t.starred).length;
+  const [settingsRaw, themes] = await Promise.all([idbGetAll("settings"), idbGetAll("themes")]);
+  const settings = Object.fromEntries(settingsRaw.map(s=>[s.key,s.value]));
+  const log = settings.completionLog || [];
+  const weekEntries = log.filter(e=>prevWeekDates.includes(e.date));
+  const doneTasks = weekEntries.filter(e=>e.kind==="task");
+  const doneProjects = weekEntries.filter(e=>e.kind==="project");
+  const starredDone = doneTasks.filter(e=>e.starred).length;
 
   const byTheme = {};
-  doneTasks.forEach(t=>{ byTheme[t.themeId] = (byTheme[t.themeId]||0) + 1; });
+  doneTasks.forEach(e=>{ byTheme[e.themeId] = (byTheme[e.themeId]||0) + 1; });
   const themeMap = Object.fromEntries(themes.map(t=>[t.id, t]));
   const catRows = Object.entries(byTheme)
     .map(([themeId, count])=>({theme: themeMap[themeId], count}))
@@ -3216,6 +3356,15 @@ async function checkWeekRollover(){
     showWeekRecapFullscreen(prevWeekDates);
   }
   await idbPut("settings", {key:"lastSeenWeekStart", value: curWeekStartISO});
+
+  // Élague le journal de complétion : on ne garde que les 60 derniers jours, largement assez
+  // pour les rapports hebdomadaires, pour ne pas le laisser grossir indéfiniment.
+  const log = settings.completionLog || [];
+  if(log.length){
+    const cutoff = toISODate(new Date(Date.now() - 60*86400000));
+    const pruned = log.filter(e=>e.date >= cutoff);
+    if(pruned.length !== log.length) await idbPut("settings", {key:"completionLog", value: pruned});
+  }
 }
 
 /* Vérifie si une nouvelle version a été publiée, via un petit fichier version.json qu'il faut
@@ -3556,6 +3705,14 @@ function attachScreenEvents(screenName, root){
       alertToggle.classList.toggle("open", !isOpen);
     });
 
+    const overdueToggle = root.querySelector("#overdueSummaryToggle");
+    if(overdueToggle) overdueToggle.addEventListener("click", ()=>{
+      const wrap = root.querySelector("#overdueBannerWrap");
+      const isOpen = wrap.style.display !== "none";
+      wrap.style.display = isOpen ? "none" : "block";
+      overdueToggle.classList.toggle("open", !isOpen);
+    });
+
     const filtersBtn = root.querySelector("#filtersBtn");
     if(filtersBtn) filtersBtn.addEventListener("click", openFiltersModal);
 
@@ -3697,6 +3854,10 @@ function attachScreenEvents(screenName, root){
     root.querySelector("#addProjectBtn").addEventListener("click", ()=>{
       const themeId = state.stack[state.stack.length-1].themeId;
       openItemModal("project", null, {themeId});
+    });
+    root.querySelector("#createTaskBtn").addEventListener("click", ()=>{
+      const themeId = state.stack[state.stack.length-1].themeId;
+      openItemModal("task", null, {themeId});
     });
     const editCatBtn = root.querySelector("#editCatBtn");
     if(editCatBtn) editCatBtn.addEventListener("click", async ()=>{
@@ -4175,7 +4336,9 @@ function attachCatFormEvents(root){
    ========================================================================= */
 let modalOutsideClickHandler = null;
 function openModal(html){
-  document.getElementById("modalBox").innerHTML = html;
+  const box = document.getElementById("modalBox");
+  box.innerHTML = html;
+  box.scrollTop = 0;
   document.getElementById("modalOverlay").style.display = "flex";
 }
 function closeModal(){
@@ -4232,6 +4395,16 @@ function itemFormHtml(kind, existing, showCategory, themesList, projectsList){
     <input type="date" id="mDeadline" value="${existing && existing.deadline ? existing.deadline : ""}">
     <button type="button" class="clear-field-btn" id="mDeadlineClear" aria-label="${tr("retirerEcheance")}">${ICONS.close}</button>
   </div>
+  ${isTask ? `
+  <div class="filter-card" style="margin-bottom:12px;">
+    <div class="filter-card-head">
+      <span class="filter-icon-circle">${ICONS.clock}</span>
+      <span class="filter-card-title">${tr("programmerLabel")}</span>
+      <button type="button" class="switch ${existing && existing.scheduled ? 'on':''}" id="mScheduledToggle" ${hasDeadline?'':'disabled'}></button>
+    </div>
+    <p class="filter-card-desc">${tr("programmerDesc")}</p>
+  </div>
+  ` : ``}
   ${isTask ? `
   <label>${tr("recurrenceLabel")}</label>
   <select id="mRecurrence" ${hasDeadline?'':'disabled'}>
@@ -4340,14 +4513,33 @@ async function openItemModal(kind, existing, context){
   }
   if(kind === "task") updateRecurrenceState();
 
+  function updateScheduledState(){
+    const schedBtn = document.getElementById("mScheduledToggle");
+    const deadlineInput = document.getElementById("mDeadline");
+    if(!schedBtn || !deadlineInput) return;
+    const has = !!deadlineInput.value;
+    schedBtn.disabled = !has;
+    if(!has) schedBtn.classList.remove("on");
+  }
+  if(kind === "task") updateScheduledState();
+
   document.getElementById("mDeadlineClear").addEventListener("click", ()=>{
     document.getElementById("mDeadline").value = "";
     updateRecurrenceState();
+    updateScheduledState();
   });
   const deadlineInput = document.getElementById("mDeadline");
   if(deadlineInput && kind === "task"){
-    deadlineInput.addEventListener("change", updateRecurrenceState);
+    deadlineInput.addEventListener("change", ()=>{
+      updateRecurrenceState();
+      updateScheduledState();
+    });
   }
+  const scheduledToggle = document.getElementById("mScheduledToggle");
+  if(scheduledToggle) scheduledToggle.addEventListener("click", ()=>{
+    if(scheduledToggle.disabled) return;
+    scheduledToggle.classList.toggle("on");
+  });
   const starToggle = document.getElementById("mStarredToggle");
   if(starToggle){
     starToggle.addEventListener("click", ()=>{
@@ -4412,6 +4604,8 @@ async function saveItemModal(){
     obj.description = document.getElementById("mDescription").value.trim();
     const linkedToggleEl = document.getElementById("mLinkedToggle");
     obj.linkedToPrevious = linkedToggleEl ? linkedToggleEl.classList.contains("on") : false;
+    const scheduledToggleEl = document.getElementById("mScheduledToggle");
+    obj.scheduled = scheduledToggleEl ? scheduledToggleEl.classList.contains("on") : false;
     const projSelect = document.getElementById("mProject");
     if(projSelect){
       const chosenProjectId = projSelect.value || null;
@@ -5107,6 +5301,22 @@ async function persistOrder(list, itemSelector, storeKind){
    ========================================================================= */
 document.getElementById("quickAddSend").addEventListener("click", quickAdd);
 document.getElementById("quickAddInput").addEventListener("keydown", (e)=>{ if(e.key==="Enter") quickAdd(); });
+
+/* Sur mobile, le clavier virtuel peut recouvrir la barre de saisie rapide (position fixe basée
+   sur la fenêtre "de mise en page", qui ne rétrécit pas toujours avec le clavier) — on la
+   repositionne dynamiquement juste au-dessus du clavier grâce à visualViewport, pour ne jamais
+   taper "à l'aveugle". */
+if(window.visualViewport){
+  const quickAddEl = document.querySelector(".quick-add");
+  function adjustQuickAddForKeyboard(){
+    if(!quickAddEl) return;
+    const vv = window.visualViewport;
+    const keyboardHeight = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+    quickAddEl.style.bottom = keyboardHeight > 50 ? `${keyboardHeight + 10}px` : "";
+  }
+  window.visualViewport.addEventListener("resize", adjustQuickAddForKeyboard);
+  window.visualViewport.addEventListener("scroll", adjustQuickAddForKeyboard);
+}
 
 async function quickAdd(){
   const input = document.getElementById("quickAddInput");
