@@ -812,7 +812,7 @@ const DB_VERSION = 1;
 /* Version de l'app, indépendante de la structure interne des données (DATA_SCHEMA_VERSION).
    Change-la à chaque mise à jour publiée, en même temps que CACHE_NAME dans service-worker.js
    et version.json (utilisés pour l'export et la détection de nouvelle version). */
-const APP_VERSION = "2.6.1";
+const APP_VERSION = "2.6.2";
 const DATA_SCHEMA_VERSION = 1;
 let db;
 
@@ -3175,11 +3175,16 @@ async function openHabitModal(existing){
         else if(cur === true) delete habit.completions[iso];
         else habit.completions[iso] = true;
         await idbPut("habits", habit);
-        existing.completions = habit.completions;
-        const now = habit.completions[iso];
-        btn.classList.remove("done","skipped");
-        if(now === true || now === "skip-done") btn.classList.add("done");
-        else if(now === "skip") btn.classList.add("skipped");
+        await checkAutoSkipHabits();
+        const freshHabit = (await idbGetAll("habits")).find(h=>h.id===existing.id);
+        existing.completions = freshHabit ? freshHabit.completions : habit.completions;
+        document.querySelectorAll("#habitEditDays [data-toggle-day]").forEach(dayBtn=>{
+          const dayIso = dayBtn.dataset.toggleDay;
+          const val = existing.completions && existing.completions[dayIso];
+          dayBtn.classList.remove("done","skipped");
+          if(val === true || val === "skip-done") dayBtn.classList.add("done");
+          else if(val === "skip") dayBtn.classList.add("skipped");
+        });
       });
     });
   }
@@ -3321,7 +3326,6 @@ async function checkAutoSkipHabits(){
   const settings = Object.fromEntries((await idbGetAll("settings")).map(s=>[s.key,s.value]));
   if(!settings.allowHabitSkip) return;
   const todayISO = toISODate(new Date());
-  if(settings.lastAutoSkipCheck === todayISO) return;
 
   const weekStartDay = settings.weekStart ?? 1;
   const weekDatesISOs = getWeekDates(0, weekStartDay).map(toISODate);
@@ -3341,7 +3345,6 @@ async function checkAutoSkipHabits(){
       }
     }
   }
-  await idbPut("settings", {key:"lastAutoSkipCheck", value: todayISO});
 }
 
 async function checkWeekRollover(){
@@ -4136,8 +4139,11 @@ function attachDoneSectionEvents(root){
       e.stopPropagation();
       const key = btn.dataset.cleardone;
       const list = root.querySelector("#doneList-"+key);
-      const ids = [...list.querySelectorAll("[data-item]")].map(el=>el.dataset.item);
-      for(const id of ids) await idbDelete("tasks", id);
+      const rows = [...list.querySelectorAll("[data-item]")];
+      for(const row of rows){
+        const store = row.dataset.kind === "project" ? "projects" : "tasks";
+        await idbDelete(store, row.dataset.item);
+      }
       renderStack();
     });
   });
@@ -4579,46 +4585,54 @@ async function openItemModal(kind, existing, context){
   }
 }
 
+let savingItemModalNow = false;
 async function saveItemModal(){
-  const {kind, existing, context, showCategory} = modalContext;
-  const name = document.getElementById("mName").value.trim();
-  if(!name) return;
-  const deadline = document.getElementById("mDeadline").value || null;
-  const priority = document.getElementById("mPriority").value;
-  const store = kind === "project" ? "projects" : "tasks";
-  const obj = existing ? {...existing} : {
-    id: uid(), status: "active", order: Date.now(),
-    themeId: context.themeId || "default",
-    projectId: context.projectId || null
-  };
-  obj.name = name;
-  obj.deadline = deadline;
-  obj.priority = priority;
-  if(showCategory){
-    obj.themeId = document.getElementById("mTheme").value;
-  }
-  if(kind === "task"){
-    obj.recurrence = deadline ? (document.getElementById("mRecurrence").value || "aucune").replace("__none__","aucune") : "aucune";
-    const starToggle = document.getElementById("mStarredToggle");
-    obj.starred = starToggle ? starToggle.classList.contains("active") : false;
-    obj.description = document.getElementById("mDescription").value.trim();
-    const linkedToggleEl = document.getElementById("mLinkedToggle");
-    obj.linkedToPrevious = linkedToggleEl ? linkedToggleEl.classList.contains("on") : false;
-    const scheduledToggleEl = document.getElementById("mScheduledToggle");
-    obj.scheduled = scheduledToggleEl ? scheduledToggleEl.classList.contains("on") : false;
-    const projSelect = document.getElementById("mProject");
-    if(projSelect){
-      const chosenProjectId = projSelect.value || null;
-      obj.projectId = chosenProjectId;
-      if(chosenProjectId){
-        const proj = (await idbGetAll("projects")).find(p=>p.id===chosenProjectId);
-        if(proj) obj.themeId = proj.themeId;
+  if(savingItemModalNow) return;
+  savingItemModalNow = true;
+  try{
+    const {kind, existing, context, showCategory} = modalContext;
+    if(!kind){ return; }
+    const name = document.getElementById("mName").value.trim();
+    if(!name) return;
+    const deadline = document.getElementById("mDeadline").value || null;
+    const priority = document.getElementById("mPriority").value;
+    const store = kind === "project" ? "projects" : "tasks";
+    const obj = existing ? {...existing} : {
+      id: uid(), status: "active", order: Date.now(),
+      themeId: context.themeId || "default",
+      projectId: context.projectId || null
+    };
+    obj.name = name;
+    obj.deadline = deadline;
+    obj.priority = priority;
+    if(showCategory){
+      obj.themeId = document.getElementById("mTheme").value;
+    }
+    if(kind === "task"){
+      obj.recurrence = deadline ? (document.getElementById("mRecurrence").value || "aucune").replace("__none__","aucune") : "aucune";
+      const starToggle = document.getElementById("mStarredToggle");
+      obj.starred = starToggle ? starToggle.classList.contains("active") : false;
+      obj.description = document.getElementById("mDescription").value.trim();
+      const linkedToggleEl = document.getElementById("mLinkedToggle");
+      obj.linkedToPrevious = linkedToggleEl ? linkedToggleEl.classList.contains("on") : false;
+      const scheduledToggleEl = document.getElementById("mScheduledToggle");
+      obj.scheduled = scheduledToggleEl ? scheduledToggleEl.classList.contains("on") : false;
+      const projSelect = document.getElementById("mProject");
+      if(projSelect){
+        const chosenProjectId = projSelect.value || null;
+        obj.projectId = chosenProjectId;
+        if(chosenProjectId){
+          const proj = (await idbGetAll("projects")).find(p=>p.id===chosenProjectId);
+          if(proj) obj.themeId = proj.themeId;
+        }
       }
     }
+    await idbPut(store, obj);
+    closeModal();
+    renderStack();
+  } finally {
+    savingItemModalNow = false;
   }
-  await idbPut(store, obj);
-  closeModal();
-  renderStack();
 }
 
 /* ---- Formulaire catégorie (édition) ---- */
