@@ -812,7 +812,7 @@ const DB_VERSION = 1;
 /* Version de l'app, indépendante de la structure interne des données (DATA_SCHEMA_VERSION).
    Change-la à chaque mise à jour publiée, en même temps que CACHE_NAME dans service-worker.js
    et version.json (utilisés pour l'export et la détection de nouvelle version). */
-const APP_VERSION = "2.6.2";
+const APP_VERSION = "2.6.3";
 const DATA_SCHEMA_VERSION = 1;
 let db;
 
@@ -841,7 +841,13 @@ function openDB(){
         _db.createObjectStore("settings", {keyPath:"key"});
       }
     };
-    req.onsuccess = (e)=>{ db = e.target.result; resolve(db); };
+    req.onsuccess = (e)=>{
+      db = e.target.result;
+      // iOS ferme parfois la connexion IndexedDB après une longue mise en arrière-plan : on le
+      // détecte pour pouvoir la rouvrir plutôt que de rester bloqué en erreur.
+      db.onclose = ()=>{ db = null; };
+      resolve(db);
+    };
     req.onerror = (e)=> reject(e);
   });
 }
@@ -1001,6 +1007,8 @@ const STRINGS = {
     nouvelleVersionMsg: (v)=>`La version ${v} est disponible (tu utilises la ${APP_VERSION}).`,
     mettreAJourMaintenant: "Mettre à jour maintenant",
     verificationImpossible: "Impossible de vérifier pour le moment (pas de connexion ?).",
+    appMiseAJourTitre: "Beeziday s'est mis à jour",
+    appMiseAJourMsg: (v)=>`L'app vient d'être mise à jour vers la version ${v}, automatiquement.`,
     semaineArgent: "Semaine en argent !", msgArgent: "Belle régularité cette semaine, continue comme ça 🥈",
     semaineBronze: "Semaine en bronze", msgBronze: "Chaque petit pas compte, la semaine prochaine ira encore mieux 🥉",
     nouvelleSemaine: "Nouvelle semaine !", msgNeutre: "La semaine passée a été plus calme, ce n'est pas grave : on repart à zéro.",
@@ -1126,6 +1134,8 @@ const STRINGS = {
     nouvelleVersionMsg: (v)=>`Version ${v} is available (you're using ${APP_VERSION}).`,
     mettreAJourMaintenant: "Update now",
     verificationImpossible: "Couldn't check right now (no connection?).",
+    appMiseAJourTitre: "Beeziday just updated",
+    appMiseAJourMsg: (v)=>`The app was automatically updated to version ${v}.`,
     semaineArgent: "Silver week!", msgArgent: "Great consistency this week, keep it up 🥈",
     semaineBronze: "Bronze week", msgBronze: "Every small step counts, next week will be even better 🥉",
     nouvelleSemaine: "New week!", msgNeutre: "Last week was quieter, that's alright — starting fresh.",
@@ -1732,11 +1742,23 @@ async function renderStack(direction){
     else if(top.screen === "habitudes") html = await renderHabitudes();
     else if(top.screen === "reglages") html = await renderReglages();
   }catch(err){
-    // Sans ce filet, une erreur inattendue pendant le rendu laissait l'ancien écran affiché
-    // (l'onglet actif changeait dans la barre du bas, mais le contenu restait bloqué sur
-    // l'écran précédent) — on affiche au moins un message plutôt que de rester figé.
     console.error("Erreur de rendu pour l'écran", top.screen, err);
-    html = renderPlaceholder(tr("erreurEcran"), tr("erreurEcranMsg"));
+    // Cause la plus fréquente : la connexion IndexedDB a été fermée par le système après une
+    // longue mise en arrière-plan (courant sur iOS). On la rouvre et on retente une fois avant
+    // d'abandonner — sans ça, l'écran restait bloqué en erreur jusqu'à relancer l'app entièrement.
+    try{
+      await openDB();
+      if(top.screen === "dashboard") html = await renderDashboard();
+      else if(top.screen === "cats") html = await renderCategories();
+      else if(top.screen === "catDetail") html = await renderCategoryDetail(top.themeId);
+      else if(top.screen === "projectDetail") html = await renderProjectDetail(top.projectId);
+      else if(top.screen === "plages") html = await renderPlages();
+      else if(top.screen === "habitudes") html = await renderHabitudes();
+      else if(top.screen === "reglages") html = await renderReglages();
+    }catch(err2){
+      console.error("Toujours en échec après réouverture de la base", err2);
+      html = renderPlaceholder(tr("erreurEcran"), tr("erreurEcranMsg"));
+    }
   }
 
   const oldScreen = app.querySelector(".screen");
@@ -5367,7 +5389,23 @@ async function quickAdd(){
   applyTheme(resolveThemeName(settings.appTheme, settings.themeAutoEnabled));
   state.language = settings.language || "fr";
   renderStack();
-  if(!settings.hasSeenOnboarding) showOnboarding();
+  if(!settings.hasSeenOnboarding){
+    showOnboarding();
+  } else {
+    let justUpdated = false;
+    try{ justUpdated = sessionStorage.getItem("beezidayJustUpdated") === "1"; }catch(e){}
+    if(justUpdated){
+      try{ sessionStorage.removeItem("beezidayJustUpdated"); }catch(e){}
+      openModal(`
+        <h3>${tr("appMiseAJourTitre")}</h3>
+        <p style="font-size:14px; line-height:1.5; margin-bottom:18px;">${tr("appMiseAJourMsg", APP_VERSION)}</p>
+        <div class="modal-actions" style="justify-content:center;">
+          <button class="btn-primary" id="justUpdatedClose">${tr("fermer")}</button>
+        </div>
+      `);
+      document.getElementById("justUpdatedClose").addEventListener("click", closeModal);
+    }
+  }
   await checkWeekRollover();
   await checkAutoSkipHabits();
   checkForNewVersion();
@@ -5389,6 +5427,7 @@ if("serviceWorker" in navigator){
   navigator.serviceWorker.addEventListener("controllerchange", ()=>{
     if(hasReloadedForNewSW) return;
     hasReloadedForNewSW = true;
+    try{ sessionStorage.setItem("beezidayJustUpdated", "1"); }catch(e){}
     window.location.reload();
   });
 }
@@ -5398,11 +5437,16 @@ if("serviceWorker" in navigator){
    d'une nouvelle version à chaque retour au premier plan. */
 document.addEventListener("visibilitychange", ()=>{
   if(document.visibilityState === "visible"){
-    checkWeekRollover();
-    checkAutoSkipHabits().then(()=>{
-      if(state.stack[state.stack.length-1].screen === "habitudes") renderStack();
-    });
-    checkForNewVersion();
+    (async ()=>{
+      // Si la connexion a été fermée pendant la mise en arrière-plan, on la rouvre avant de
+      // relancer quoi que ce soit — pour éviter que l'erreur n'apparaisse ne serait-ce qu'une fois.
+      if(!db){ try{ await openDB(); }catch(e){ console.error("Échec de réouverture de la base", e); } }
+      checkWeekRollover();
+      checkAutoSkipHabits().then(()=>{
+        if(state.stack[state.stack.length-1].screen === "habitudes") renderStack();
+      });
+      checkForNewVersion();
+    })();
   }
 });
 </script>
