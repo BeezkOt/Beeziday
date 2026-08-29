@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
+<meta name="color-scheme" content="light dark">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Beeziday</title>
 <meta name="description" content="Gestion de projets, tâches, plages horaires et habitudes">
@@ -661,7 +662,9 @@
   .slot-block{
     position:absolute; left:0; right:4px; border-radius:8px; padding:4px 8px;
     color:#fff; overflow:hidden; cursor:pointer; z-index:5; box-shadow:0 1px 3px rgba(35,41,31,.18);
+    touch-action:none; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;
   }
+  .slot-block.slot-dragging{ z-index:10; opacity:.85; box-shadow:0 6px 16px rgba(35,41,31,.3); }
   .slot-time{display:block; font-size:10px; font-weight:700; opacity:.9; line-height:1.3;}
   .slot-cat{display:block; font-size:12.5px; font-weight:700; line-height:1.3;}
   .slot-repeat-icon{width:11px; height:11px; float:right; opacity:.85; color:#fff;}
@@ -812,7 +815,7 @@ const DB_VERSION = 1;
 /* Version de l'app, indépendante de la structure interne des données (DATA_SCHEMA_VERSION).
    Change-la à chaque mise à jour publiée, en même temps que CACHE_NAME dans service-worker.js
    et version.json (utilisés pour l'export et la détection de nouvelle version). */
-const APP_VERSION = "2.6.3";
+const APP_VERSION = "2.7.2";
 const DATA_SCHEMA_VERSION = 1;
 let db;
 
@@ -1388,6 +1391,12 @@ function slotEndMinutes(t){
   const [h,m] = t.split(":").map(Number);
   return (h===0 && m===0) ? 24*60 : h*60 + m;
 }
+function minutesToTime(mins){
+  mins = Math.max(0, Math.min(24*60, mins));
+  const h = Math.floor(mins/60), m = mins%60;
+  if(h === 24) return "00:00";
+  return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;
+}
 
 /* Sort a list of active items (projects or standalone tasks) by:
    1. priority desc  2. deadline asc (no deadline last)  3. manual order asc */
@@ -1855,6 +1864,13 @@ async function renderDashboard(){
     </div>`;
   } else {
     const theme = isAllCategories ? null : themes.find(t=>t.id === activeThemeId);
+    if(!isAllCategories && !theme){
+      // La catégorie mémorisée (plage sélectionnée à la main, ou catégorie choisie) n'existe
+      // plus — plutôt que de planter, on oublie ce choix et on retombe sur l'état par défaut.
+      state.currentSlotThemeOverride = null;
+      state.currentItemOverride = null;
+      return renderDashboard();
+    }
 
     if(theme && !theme.forProjects){
       // Catégorie réservée aux plages (pas de projets associés, ex : "Rendez-vous") :
@@ -2166,6 +2182,34 @@ async function removeCompletionLogEntry(id, date){
   }
 }
 
+/* Crée la prochaine occurrence d'une tâche récurrente (mêmes attributs, échéance suivante),
+   sans rien changer au statut de la tâche elle-même. Renvoie l'id créé, ou null si la tâche
+   n'est pas récurrente / n'a pas d'échéance. Réutilisé à la fois quand on valide une tâche et
+   quand on supprime une occurrence qui n'en avait pas encore engendré (sinon la série s'arrêtait
+   net dès qu'on supprimait une occurrence pas encore validée). */
+async function createNextRecurrence(task){
+  if(!task.recurrence || task.recurrence === "aucune" || !task.deadline) return null;
+  const targetDay = task.recurrenceDay || parseISODate(task.deadline).getDate();
+  const settings = Object.fromEntries((await idbGetAll("settings")).map(s=>[s.key,s.value]));
+  const newId = uid();
+  await idbPut("tasks", {
+    id: newId,
+    name: task.name,
+    themeId: task.themeId,
+    projectId: task.projectId,
+    priority: task.priority,
+    starred: false,
+    description: task.description,
+    recurrence: task.recurrence,
+    recurrenceDay: targetDay,
+    deadline: nextRecurrenceDate(task.deadline, task.recurrence, targetDay, settings.workDays),
+    status: "active",
+    order: Date.now(),
+    scheduled: task.scheduled || false,
+  });
+  return newId;
+}
+
 async function toggleTaskDone(taskId){
   const task = (await idbGetAll("tasks")).find(t=>t.id===taskId);
   if(!task) return;
@@ -2188,24 +2232,8 @@ async function toggleTaskDone(taskId){
   task.completedAt = toISODate(new Date());
   await idbPut("tasks", task);
   await appendCompletionLog({id: taskId, date: task.completedAt, kind:"task", themeId: task.themeId, starred: !!task.starred});
-  if(task.recurrence && task.recurrence !== "aucune" && task.deadline){
-    const targetDay = task.recurrenceDay || parseISODate(task.deadline).getDate();
-    const settings = Object.fromEntries((await idbGetAll("settings")).map(s=>[s.key,s.value]));
-    const newId = uid();
-    await idbPut("tasks", {
-      id: newId,
-      name: task.name,
-      themeId: task.themeId,
-      projectId: task.projectId,
-      priority: task.priority,
-      starred: false,
-      description: task.description,
-      recurrence: task.recurrence,
-      recurrenceDay: targetDay,
-      deadline: nextRecurrenceDate(task.deadline, task.recurrence, targetDay, settings.workDays),
-      status: "active",
-      order: Date.now(),
-    });
+  const newId = await createNextRecurrence(task);
+  if(newId){
     task.nextOccurrenceId = newId;
     await idbPut("tasks", task);
   }
@@ -2228,6 +2256,11 @@ async function confirmAndDeleteTask(id, afterDelete){
     `);
     document.getElementById("cancelRecDelete").addEventListener("click", closeModal);
     document.getElementById("delOneOcc").addEventListener("click", async ()=>{
+      // Si cette occurrence n'a encore jamais été validée, aucune suivante n'a été engendrée —
+      // il faut la créer maintenant, sinon supprimer "juste celle-ci" arrêtait toute la série.
+      if(!task.nextOccurrenceId){
+        await createNextRecurrence(task);
+      }
       await idbDelete("tasks", id);
       closeModal();
       if(afterDelete) afterDelete(); else renderStack();
@@ -2610,9 +2643,11 @@ async function renderDayGrid(selectedDate){
 
   const blocks = daySlots.map(s=>{
     const theme = themeMap[s.themeId];
-    const top = slotStartMinutes(s.start) * (HOUR_ROW_PX/60);
-    const height = Math.max((slotEndMinutes(s.end) - slotStartMinutes(s.start)) * (HOUR_ROW_PX/60), 24);
-    return `<div class="slot-block" data-slot="${s.id}" data-slot-date="${selectedDate}" style="top:${top}px;height:${height}px;background:${theme?theme.color:'#8A8F80'}">
+    const startMin = slotStartMinutes(s.start);
+    const durMin = slotEndMinutes(s.end) - startMin;
+    const top = startMin * (HOUR_ROW_PX/60);
+    const height = Math.max(durMin * (HOUR_ROW_PX/60), 24);
+    return `<div class="slot-block" data-slot="${s.id}" data-slot-date="${selectedDate}" data-start-min="${startMin}" data-dur-min="${durMin}" style="top:${top}px;height:${height}px;background:${theme?theme.color:'#8A8F80'}">
       ${s.recurrence && s.recurrence !== "aucune" ? `<span class="slot-repeat-icon">${ICONS.repeat}</span>` : ""}
       <span class="slot-cat">${theme?escapeHtml(themeDisplayName(theme)):"?"}</span>
       ${s.note ? `<span class="slot-note">${escapeHtml(s.note)}</span>` : ""}
@@ -2621,6 +2656,115 @@ async function renderDayGrid(selectedDate){
   }).join("");
 
   return `<div class="day-grid" style="height:${24*HOUR_ROW_PX + 20}px">${rows}${blocks}</div>`;
+}
+
+/* Glisser un bloc de plage verticalement pour la déplacer dans la journée (même mécanique
+   "appui bref = tap, appui + mouvement = glisser" que pour les tâches). La durée est conservée ;
+   on aimante par pas de 5 minutes et on refuse le dépôt si ça chevaucherait une autre plage
+   ce jour-là (l'occurrence déplacée elle-même exclue de la vérification). */
+function makeSlotDraggable(root){
+  const pxPerMin = HOUR_ROW_PX/60;
+  const SNAP_MIN = 5;
+  root.querySelectorAll(".slot-block").forEach(block=>{
+    let pointerId = null, startY = 0, startTop = 0, holdTimer = null, dragging = false, moved = false;
+    const grid = block.closest(".day-grid");
+    const durMin = parseFloat(block.dataset.durMin);
+    const heightPx = parseFloat(block.style.height);
+
+    block.addEventListener("pointerdown", (e)=>{
+      if(pointerId !== null) return;
+      pointerId = e.pointerId;
+      startY = e.clientY;
+      startTop = parseFloat(block.style.top);
+      moved = false;
+      holdTimer = setTimeout(()=>{
+        dragging = true;
+        block.classList.add("slot-dragging");
+      }, 160);
+      document.addEventListener("pointermove", onMove);
+      document.addEventListener("pointerup", onUp);
+      document.addEventListener("pointercancel", onUp);
+    });
+
+    function onMove(e){
+      if(e.pointerId !== pointerId) return;
+      const dy = e.clientY - startY;
+      if(Math.abs(dy) > 6 && !dragging) moved = true;
+      if(!dragging) return;
+      e.preventDefault();
+      let newTop = startTop + dy;
+      newTop = Math.max(0, Math.min(24*HOUR_ROW_PX - heightPx, newTop));
+      block.style.top = newTop + "px";
+    }
+
+    async function onUp(e){
+      if(e.pointerId !== pointerId) return;
+      clearTimeout(holdTimer);
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+      document.removeEventListener("pointercancel", onUp);
+      pointerId = null;
+
+      if(!dragging){
+        if(!moved){
+          const slot = (await idbGetAll("timeslots")).find(s=>s.id===block.dataset.slot);
+          if(slot) openSlotModal(slot, null, null, block.dataset.slotDate);
+        }
+        return;
+      }
+      dragging = false;
+      block.classList.remove("slot-dragging");
+      lastGestureEndTime = performance.now();
+
+      try{
+        const rawStartMin = parseFloat(block.style.top) / pxPerMin;
+        let newStartMin = Math.round(rawStartMin / SNAP_MIN) * SNAP_MIN;
+        newStartMin = Math.max(0, Math.min(24*60 - durMin, newStartMin));
+        let newEndMin = newStartMin + durMin;
+
+        const selectedDate = block.dataset.slotDate;
+        const settings = Object.fromEntries((await idbGetAll("settings")).map(s=>[s.key,s.value]));
+        const allSlots = await idbGetAll("timeslots");
+        const daySlots = allSlots.filter(s=>s.id !== block.dataset.slot && slotOccursOn(s, selectedDate, settings.workDays));
+        const findOverlap = (s0, e0)=> daySlots.find(s=>{
+          const sStart = slotStartMinutes(s.start), sEnd = slotEndMinutes(s.end);
+          return s0 < sEnd && e0 > sStart;
+        });
+
+        let hit = findOverlap(newStartMin, newEndMin);
+        if(hit){
+          // Se cale juste après la plage percutée (au prochain créneau libre), plutôt que
+          // d'annuler directement le déplacement.
+          const snappedStart = slotEndMinutes(hit.end);
+          const snappedEnd = snappedStart + durMin;
+          if(snappedEnd <= 24*60 && !findOverlap(snappedStart, snappedEnd)){
+            newStartMin = snappedStart;
+            newEndMin = snappedEnd;
+            hit = null;
+          }
+        }
+
+        if(hit){
+          // Toujours en conflit (ou plus de place après) : on annule et on remet à l'origine.
+          block.style.top = startTop + "px";
+          return;
+        }
+
+        const slot = allSlots.find(s=>s.id===block.dataset.slot);
+        if(slot){
+          slot.start = minutesToTime(newStartMin);
+          slot.end = minutesToTime(newEndMin);
+          await idbPut("timeslots", slot);
+        }
+        renderStack();
+      }catch(err){
+        // Filet de sécurité : si quoi que ce soit échoue ici, on ne laisse jamais le bloc
+        // affiché à une position "en l'air" qui ne correspond à rien d'enregistré.
+        console.error("Erreur pendant le déplacement de la plage", err);
+        block.style.top = startTop + "px";
+      }
+    }
+  });
 }
 
 async function renderPlages(){
@@ -2637,16 +2781,18 @@ async function renderPlages(){
   const prevWeekHasSlots = prevWeekISOs.some(iso => allSlots.some(s=>slotOccursOn(s, iso, settings.workDays)));
 
   let html = `
-  <div class="screen-header">
-    <h1 class="screen-title" style="flex:1">${tr("plagesDeTemps")}</h1>
-    <button class="icon-btn" id="addSlotBtn">${ICONS.plus}</button>
-  </div>
-  <div class="week-nav">
-    <button class="week-arrow" id="weekPrev" aria-label="Semaine précédente">${ICONS.back}</button>
-    <div class="week-label">${formatWeekLabel(weekDates[0], weekDates[6])}</div>
-    <button class="week-arrow" id="weekNext" aria-label="Semaine suivante">${ICONS.chevRight}</button>
-  </div>
-  <div class="day-btn-row">${renderDayButtons(weekDates, state.plagesSelectedDate, todayISO)}</div>`;
+  <div class="sticky-cat-header">
+    <div class="screen-header">
+      <h1 class="screen-title" style="flex:1">${tr("plagesDeTemps")}</h1>
+      <button class="icon-btn" id="addSlotBtn">${ICONS.plus}</button>
+    </div>
+    <div class="week-nav">
+      <button class="week-arrow" id="weekPrev" aria-label="Semaine précédente">${ICONS.back}</button>
+      <div class="week-label">${formatWeekLabel(weekDates[0], weekDates[6])}</div>
+      <button class="week-arrow" id="weekNext" aria-label="Semaine suivante">${ICONS.chevRight}</button>
+    </div>
+    <div class="day-btn-row">${renderDayButtons(weekDates, state.plagesSelectedDate, todayISO)}</div>
+  </div>`;
 
   if(!weekHasSlots && prevWeekHasSlots){
     html += `
@@ -3246,6 +3392,7 @@ async function saveHabitModal(){
   obj.name = name; obj.frequency = frequency; obj.timesPerWeek = timesPerWeek;
   obj.momentDuJour = momentDuJour; obj.descFaible = descFaible; obj.descNormale = descNormale; obj.descElevee = descElevee;
   await idbPut("habits", obj);
+  await checkAutoSkipHabits();
   closeModal();
   renderStack();
 }
@@ -3986,13 +4133,7 @@ function attachScreenEvents(screenName, root){
         openSlotModal(null, state.plagesSelectedDate, parseInt(row.dataset.hour, 10));
       });
     });
-    root.querySelectorAll(".slot-block").forEach(block=>{
-      block.addEventListener("click", async (e)=>{
-        e.stopPropagation();
-        const slot = (await idbGetAll("timeslots")).find(s=>s.id===block.dataset.slot);
-        if(slot) openSlotModal(slot, null, null, block.dataset.slotDate);
-      });
-    });
+    makeSlotDraggable(root);
   }
 
   if(screenName === "habitudes"){
@@ -4302,17 +4443,27 @@ function startInlineDescTextarea(el, taskId, row){
   const textarea = document.createElement("textarea");
   textarea.className = "inline-edit-textarea";
   textarea.value = domText;
-  textarea.rows = 3;
+  // Hauteur de départ approximative selon la longueur du texte existant, puis ajustement
+  // automatique ensuite — sinon un texte long ouvrait une zone bien plus petite que la
+  // description affichée, hors de vue si on avait tapé en bas de la liste.
+  textarea.rows = Math.max(3, Math.min(14, Math.ceil(domText.length / 38) + domText.split("\n").length - 1));
   el.appendChild(textarea);
+  const autoGrow = ()=>{ textarea.style.height = "auto"; textarea.style.height = (textarea.scrollHeight + 2) + "px"; };
+  textarea.addEventListener("input", autoGrow);
+  autoGrow();
   // Focus synchrone (même geste utilisateur) pour que le clavier s'affiche sur mobile.
   textarea.focus();
   textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+  // Laisse l'animation du clavier démarrer avant de faire défiler, sinon la position calculée
+  // ne tient pas compte de l'espace qu'il va prendre.
+  setTimeout(()=>{ textarea.scrollIntoView({block:"center", behavior:"smooth"}); }, 250);
 
   // Récupère le texte brut réel (retours à la ligne compris) en tâche de fond.
   idbGetAll("tasks").then(tasks=>{
     const task = tasks.find(t=>t.id===taskId);
     if(task && document.activeElement === textarea && textarea.value !== (task.description||"")){
       textarea.value = task.description || "";
+      autoGrow();
     }
   });
 
@@ -5392,10 +5543,13 @@ async function quickAdd(){
   if(!settings.hasSeenOnboarding){
     showOnboarding();
   } else {
-    let justUpdated = false;
-    try{ justUpdated = sessionStorage.getItem("beezidayJustUpdated") === "1"; }catch(e){}
-    if(justUpdated){
-      try{ sessionStorage.removeItem("beezidayJustUpdated"); }catch(e){}
+    // Comparer à la dernière version connue plutôt que de dépendre d'un signal posé juste avant
+    // un rechargement automatique (peu fiable dans une PWA iOS) : ainsi, peu importe comment la
+    // mise à jour a eu lieu (rechargement auto, relance manuelle, bouton "Mettre à jour"...),
+    // on la détecte simplement en comparant à ce qu'on avait vu au démarrage précédent.
+    let lastKnownVersion = null;
+    try{ lastKnownVersion = localStorage.getItem("beezidayLastVersion"); }catch(e){}
+    if(lastKnownVersion && lastKnownVersion !== APP_VERSION){
       openModal(`
         <h3>${tr("appMiseAJourTitre")}</h3>
         <p style="font-size:14px; line-height:1.5; margin-bottom:18px;">${tr("appMiseAJourMsg", APP_VERSION)}</p>
@@ -5405,6 +5559,7 @@ async function quickAdd(){
       `);
       document.getElementById("justUpdatedClose").addEventListener("click", closeModal);
     }
+    try{ localStorage.setItem("beezidayLastVersion", APP_VERSION); }catch(e){}
   }
   await checkWeekRollover();
   await checkAutoSkipHabits();
@@ -5427,7 +5582,6 @@ if("serviceWorker" in navigator){
   navigator.serviceWorker.addEventListener("controllerchange", ()=>{
     if(hasReloadedForNewSW) return;
     hasReloadedForNewSW = true;
-    try{ sessionStorage.setItem("beezidayJustUpdated", "1"); }catch(e){}
     window.location.reload();
   });
 }
