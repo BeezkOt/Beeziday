@@ -3,6 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="color-scheme" content="light dark">
+<script>
+  // Applique le thème mis en cache localement dès que possible, avant même le premier
+  // affichage — évite le flash clair (couleur par défaut) au démarrage, le temps que la
+  // logique JS complète (qui a besoin de lire la base de données) ne prenne le relais.
+  try{
+    var cached = localStorage.getItem("beezidayThemeCache");
+    if(cached) document.documentElement.className = "theme-" + cached;
+  }catch(e){}
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Beeziday</title>
 <meta name="description" content="Gestion de projets, tâches, plages horaires et habitudes">
@@ -34,12 +43,12 @@
     --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   }
 
-  body.theme-dark{
+  html.theme-dark{
     --bg:#1C211A; --surface:#242A21; --surface-raised:#2B3227; --border:#3A4235;
     --text:#EDEFE7; --text-muted:#9AA292; --accent:#4F9C87; --accent-soft:#28362F;
     --gold:#E0B255; --gold-soft:#2E362B; --alert:#E4876C; --alert-soft:#3A2620;
   }
-  body.theme-cream{
+  html.theme-cream{
     --bg:#F6EFE1; --surface:#FBF6EA; --surface-raised:#FFFDF7; --border:#E6DCC6;
     --text:#2B2418; --text-muted:#8A7F68; --accent:#7C8B52; --accent-soft:#E7E9D3;
     --gold:#D9A441; --gold-soft:#E9D6B0; --alert:#C1543C; --alert-soft:#F5DCD5;
@@ -650,10 +659,10 @@
     position:absolute; left:-52px; right:0; border-top:1px solid var(--border);
   }
   .now-line{
-    position:absolute; left:-52px; right:0; height:2px; background:#2ECC71; z-index:6; pointer-events:none;
+    position:absolute; left:-52px; right:0; height:2px; background:var(--accent); z-index:6; pointer-events:none;
   }
   .now-dot{
-    position:absolute; left:-3px; top:-4px; width:10px; height:10px; border-radius:50%; background:#2ECC71;
+    position:absolute; left:-3px; top:-4px; width:10px; height:10px; border-radius:50%; background:var(--accent);
   }
   .hour-label{
     position:absolute; left:0; top:-7px; width:44px; text-align:right;
@@ -815,7 +824,7 @@ const DB_VERSION = 1;
 /* Version de l'app, indépendante de la structure interne des données (DATA_SCHEMA_VERSION).
    Change-la à chaque mise à jour publiée, en même temps que CACHE_NAME dans service-worker.js
    et version.json (utilisés pour l'export et la détection de nouvelle version). */
-const APP_VERSION = "2.7.3";
+const APP_VERSION = "2.7.5";
 const DATA_SCHEMA_VERSION = 1;
 let db;
 
@@ -2665,104 +2674,138 @@ async function renderDayGrid(selectedDate){
 function makeSlotDraggable(root){
   const pxPerMin = HOUR_ROW_PX/60;
   const SNAP_MIN = 5;
+  const HOLD_MS = 500;
+  const DECIDE_PX = 8;
+
   root.querySelectorAll(".slot-block").forEach(block=>{
-    let pointerId = null, startY = 0, startTop = 0, holdTimer = null, dragging = false, moved = false;
-    const grid = block.closest(".day-grid");
     const durMin = parseFloat(block.dataset.durMin);
     const heightPx = parseFloat(block.style.height);
 
     block.addEventListener("pointerdown", (e)=>{
-      if(pointerId !== null) return;
-      pointerId = e.pointerId;
-      startY = e.clientY;
-      startTop = parseFloat(block.style.top);
-      moved = false;
-      holdTimer = setTimeout(()=>{
-        dragging = true;
-        block.classList.add("slot-dragging");
-      }, 160);
-      document.addEventListener("pointermove", onMove);
-      document.addEventListener("pointerup", onUp);
-      document.addEventListener("pointercancel", onUp);
+      startGesture(e.pointerId, e.clientX, e.clientY);
     });
 
-    function onMove(e){
-      if(e.pointerId !== pointerId) return;
-      const dy = e.clientY - startY;
-      if(Math.abs(dy) > 6 && !dragging) moved = true;
-      if(!dragging) return;
-      e.preventDefault();
-      let newTop = startTop + dy;
-      newTop = Math.max(0, Math.min(24*HOUR_ROW_PX - heightPx, newTop));
-      block.style.top = newTop + "px";
-    }
+    function startGesture(pointerId, downX, downY){
+      let mode = null; // null | "scrolling" | "dragging"
+      let startTop = parseFloat(block.style.top);
+      let lastY = downY, lastMoveTime = performance.now(), velocity = 0;
 
-    async function onUp(e){
-      if(e.pointerId !== pointerId) return;
-      clearTimeout(holdTimer);
-      document.removeEventListener("pointermove", onMove);
-      document.removeEventListener("pointerup", onUp);
-      document.removeEventListener("pointercancel", onUp);
-      pointerId = null;
-
-      if(!dragging){
-        if(!moved){
-          const slot = (await idbGetAll("timeslots")).find(s=>s.id===block.dataset.slot);
-          if(slot) openSlotModal(slot, null, null, block.dataset.slotDate);
-        }
-        return;
+      function activateDrag(){
+        if(mode !== null) return;
+        mode = "dragging";
+        block.classList.add("slot-dragging");
       }
-      dragging = false;
-      block.classList.remove("slot-dragging");
-      lastGestureEndTime = performance.now();
+      const holdTimer = setTimeout(activateDrag, HOLD_MS);
 
-      try{
-        const rawStartMin = parseFloat(block.style.top) / pxPerMin;
-        let newStartMin = Math.round(rawStartMin / SNAP_MIN) * SNAP_MIN;
-        newStartMin = Math.max(0, Math.min(24*60 - durMin, newStartMin));
-        let newEndMin = newStartMin + durMin;
+      function onMove(e){
+        if(e.pointerId !== pointerId) return;
+        const dx = e.clientX - downX, dy = e.clientY - downY;
 
-        const selectedDate = block.dataset.slotDate;
-        const settings = Object.fromEntries((await idbGetAll("settings")).map(s=>[s.key,s.value]));
-        const allSlots = await idbGetAll("timeslots");
-        const daySlots = allSlots.filter(s=>s.id !== block.dataset.slot && slotOccursOn(s, selectedDate, settings.workDays));
-        const findOverlap = (s0, e0)=> daySlots.find(s=>{
-          const sStart = slotStartMinutes(s.start), sEnd = slotEndMinutes(s.end);
-          return s0 < sEnd && e0 > sStart;
-        });
-
-        let hit = findOverlap(newStartMin, newEndMin);
-        if(hit){
-          // Se cale juste après la plage percutée (au prochain créneau libre), plutôt que
-          // d'annuler directement le déplacement.
-          const snappedStart = slotEndMinutes(hit.end);
-          const snappedEnd = snappedStart + durMin;
-          if(snappedEnd <= 24*60 && !findOverlap(snappedStart, snappedEnd)){
-            newStartMin = snappedStart;
-            newEndMin = snappedEnd;
-            hit = null;
-          }
+        if(mode === null){
+          const movedEnough = Math.abs(dx) > DECIDE_PX || Math.abs(dy) > DECIDE_PX;
+          if(!movedEnough) return;
+          // Un mouvement avant la fin du délai = intention de scroll, pas de déplacement de
+          // plage. Comme touch-action:none bloque le pan natif (nécessaire pour un glisser
+          // fiable), on fait défiler #app nous-mêmes pour que ça continue à fonctionner.
+          clearTimeout(holdTimer);
+          mode = "scrolling";
         }
 
-        if(hit){
-          // Toujours en conflit (ou plus de place après) : on annule et on remet à l'origine.
-          block.style.top = startTop + "px";
+        if(mode === "scrolling"){
+          e.preventDefault();
+          const appEl = document.getElementById("app");
+          const now = performance.now();
+          const dt = Math.max(now - lastMoveTime, 1);
+          velocity = (e.clientY - lastY) / dt;
+          if(appEl) appEl.scrollTop -= (e.clientY - lastY);
+          lastY = e.clientY;
+          lastMoveTime = now;
           return;
         }
 
-        const slot = allSlots.find(s=>s.id===block.dataset.slot);
-        if(slot){
-          slot.start = minutesToTime(newStartMin);
-          slot.end = minutesToTime(newEndMin);
-          await idbPut("timeslots", slot);
+        if(mode === "dragging"){
+          e.preventDefault();
+          let newTop = startTop + dy;
+          newTop = Math.max(0, Math.min(24*HOUR_ROW_PX - heightPx, newTop));
+          block.style.top = newTop + "px";
         }
-        renderStack();
-      }catch(err){
-        // Filet de sécurité : si quoi que ce soit échoue ici, on ne laisse jamais le bloc
-        // affiché à une position "en l'air" qui ne correspond à rien d'enregistré.
-        console.error("Erreur pendant le déplacement de la plage", err);
-        block.style.top = startTop + "px";
       }
+
+      async function onUp(e){
+        if(e.pointerId !== pointerId) return;
+        clearTimeout(holdTimer);
+        document.removeEventListener("pointermove", onMove);
+        document.removeEventListener("pointerup", onUp);
+        document.removeEventListener("pointercancel", onUp);
+
+        if(mode === "scrolling" && Math.abs(velocity) > 0.05){
+          const appEl = document.getElementById("app");
+          if(appEl) startMomentumScroll(appEl, velocity);
+        }
+
+        if(mode === null){
+          // Ni scroll ni glisser : un simple tap, on ouvre l'édition.
+          const slot = (await idbGetAll("timeslots")).find(s=>s.id===block.dataset.slot);
+          if(slot) openSlotModal(slot, null, null, block.dataset.slotDate);
+          return;
+        }
+        if(mode !== "dragging") return;
+
+        lastGestureEndTime = performance.now();
+        block.classList.remove("slot-dragging");
+
+        try{
+          const rawStartMin = parseFloat(block.style.top) / pxPerMin;
+          let newStartMin = Math.round(rawStartMin / SNAP_MIN) * SNAP_MIN;
+          newStartMin = Math.max(0, Math.min(24*60 - durMin, newStartMin));
+          let newEndMin = newStartMin + durMin;
+
+          const selectedDate = block.dataset.slotDate;
+          const settings = Object.fromEntries((await idbGetAll("settings")).map(s=>[s.key,s.value]));
+          const allSlots = await idbGetAll("timeslots");
+          const daySlots = allSlots.filter(s=>s.id !== block.dataset.slot && slotOccursOn(s, selectedDate, settings.workDays));
+          const findOverlap = (s0, e0)=> daySlots.find(s=>{
+            const sStart = slotStartMinutes(s.start), sEnd = slotEndMinutes(s.end);
+            return s0 < sEnd && e0 > sStart;
+          });
+
+          let hit = findOverlap(newStartMin, newEndMin);
+          if(hit){
+            // Se cale juste après la plage percutée (au prochain créneau libre), plutôt que
+            // d'annuler directement le déplacement.
+            const snappedStart = slotEndMinutes(hit.end);
+            const snappedEnd = snappedStart + durMin;
+            if(snappedEnd <= 24*60 && !findOverlap(snappedStart, snappedEnd)){
+              newStartMin = snappedStart;
+              newEndMin = snappedEnd;
+              hit = null;
+            }
+          }
+
+          if(hit){
+            // Toujours en conflit (ou plus de place après) : on annule et on remet à l'origine.
+            block.style.top = startTop + "px";
+            return;
+          }
+
+          const slot = allSlots.find(s=>s.id===block.dataset.slot);
+          if(slot){
+            slot.start = minutesToTime(newStartMin);
+            slot.end = minutesToTime(newEndMin);
+            await idbPut("timeslots", slot);
+          }
+          renderStack();
+        }catch(err){
+          // Filet de sécurité : si quoi que ce soit échoue ici, on ne laisse jamais le bloc
+          // affiché à une position "en l'air" qui ne correspond à rien d'enregistré.
+          console.error("Erreur pendant le déplacement de la plage", err);
+          block.style.top = startTop + "px";
+        }
+      }
+
+      document.addEventListener("pointermove", onMove);
+      document.addEventListener("pointerup", onUp);
+      document.addEventListener("pointercancel", onUp);
     }
   });
 }
@@ -3697,9 +3740,13 @@ async function closeOnboarding(){
 
 function applyTheme(themeName){
   const name = themeName || "light";
-  document.body.className = "theme-" + name;
+  document.documentElement.className = "theme-" + name;
   const meta = document.getElementById("themeColorMeta");
   if(meta) meta.setAttribute("content", THEME_BG[name] || THEME_BG.light);
+  // Mis en cache pour que le script en tête de page puisse l'appliquer immédiatement au
+  // prochain lancement, avant même que CSS/JS n'aient eu le temps de tourner (voir le petit
+  // script juste après <head>, qui évite le flash clair/sombre au démarrage).
+  try{ localStorage.setItem("beezidayThemeCache", name); }catch(e){}
 }
 
 /* Calcule le thème effectif à partir du choix du menu déroulant et du bouton "mode automatique" :
@@ -4448,8 +4495,9 @@ function startInlineDescTextarea(el, taskId, row){
   // description affichée, hors de vue si on avait tapé en bas de la liste.
   textarea.rows = Math.max(3, Math.min(14, Math.ceil(domText.length / 38) + domText.split("\n").length - 1));
   el.appendChild(textarea);
+  // Ajustement de hauteur ponctuel, une seule fois à l'ouverture — le refaire à chaque frappe
+  // (comme avant) perturbait le curseur et faisait sauter le focus pendant la saisie.
   const autoGrow = ()=>{ textarea.style.height = "auto"; textarea.style.height = (textarea.scrollHeight + 2) + "px"; };
-  textarea.addEventListener("input", autoGrow);
   autoGrow();
   // Focus synchrone (même geste utilisateur) pour que le clavier s'affiche sur mobile.
   textarea.focus();
